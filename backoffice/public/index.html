@@ -1,0 +1,304 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Padel Tournament Manager - Backoffice</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="app-container">
+        <!-- Sidebar Navigation -->
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <h1>🎾 Padel Manager</h1>
+            </div>
+            <nav class="sidebar-nav">
+                <a href="#" class="nav-item active" data-page="dashboard">
+                    <span class="icon">📊</span>
+                    <span>Dashboard</span>
+                </a>
+                <a href="#" class="nav-item" data-page="categories">
+                    <span class="icon">🏷️</span>
+                    <span>Categorias</span>
+                </a>
+                <a href="#" class="nav-item" data-page="teams">
+                    <span class="icon">👥</span>
+                    <span>Equipas</span>
+                </a>
+                <a href="#" class="nav-item" data-page="matches">
+                    <span class="icon">⚽</span>
+                    <span>Jogos</span>
+                </a>
+                <a href="#" class="nav-item" data-page="standings">
+                    <span class="icon">🏆</span>
+                    <span>Classificações</span>
+                </a>
+                <a href="#" class="nav-item" data-page="users" id="nav-users" style="display: none;">
+                    <span class="icon">👤</span>
+                    <span>Utilizadores</span>
+                </a>
+            </nav>
+            <div class="sidebar-footer">
+                <div class="user-info" id="user-info" style="display: none;">
+                    <div class="user-name" id="user-name"></div>
+                    <div class="user-role" id="user-role"></div>
+                </div>
+                <button class="btn btn-secondary btn-sm" id="logout-btn" onclick="logout()" style="display: none;">Sair</button>
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <!-- Dashboard Page -->
+            <div id="dashboard-page" class="page active">
+                <h2>Dashboard</h2>
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-icon">🏷️</div>
+                        <div class="stat-info">
+                            <div class="stat-value" id="stat-categories">-</div>
+                            <div class="stat-label">Categorias</div>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon">👥</div>
+                        <div class="stat-info">
+                            <div class="stat-value" id="stat-teams">-</div>
+                            <div class="stat-label">Equipas</div>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon">⚽</div>
+                        <div class="stat-info">
+                            <div class="stat-value" id="stat-matches">-</div>
+                            <div class="stat-label">Jogos</div>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon">🔥</div>
+                        <div class="stat-info">
+                            <div class="stat-value" id="stat-playing">-</div>
+                            <div class="stat-label">Em Curso</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="dashboard-sections">
+                    <section class="dashboard-section">
+                        <h3>Próximos Jogos</h3>
+                        <div id="upcoming-matches" class="matches-list"></div>
+                    </section>
+                    <section class="dashboard-section">
+                        <h3>Jogos em Curso</h3>
+                        <div id="playing-matches" class="matches-list"></div>
+                    </section>
+                </div>
+            </div>
+
+            <!-- Categories Page -->
+            <div id="categories-page" class="page">
+                <div class="page-header">
+                    <h2>Categorias</h2>
+                    <button class="btn btn-primary" id="btn-new-category" onclick="openCategoryModal()">+ Nova Categoria</button>
+                </div>
+                <div id="categories-list" class="items-grid"></div>
+            </div>
+
+            <!-- Teams Page -->
+            <div id="teams-page" class="page">
+                <div class="page-header">
+                    <h2>Equipas</h2>
+                    <button class="btn btn-primary" id="btn-new-team" onclick="openTeamModal()">+ Nova Equipa</button>
+                </div>
+                <div class="filters">
+                    <select id="filter-category" onchange="loadTeams()">
+                        <option value="">Todas as Categorias</option>
+                    </select>
+                    <select id="filter-group" onchange="loadTeams()">
+                        <option value="">Todos os Grupos</option>
+                        <option value="A">Grupo A</option>
+                        <option value="B">Grupo B</option>
+                    </select>
+                </div>
+                <div id="teams-list" class="items-grid"></div>
+            </div>
+
+            <!-- Matches Page -->
+            <div id="matches-page" class="page">
+                <div class="page-header">
+                    <h2>Jogos</h2>
+                    <button class="btn btn-primary" id="btn-new-match" onclick="openMatchModal()">+ Novo Jogo</button>
+                </div>
+                <div class="filters">
+                    <select id="filter-match-category" onchange="loadMatches()">
+                        <option value="">Todas as Categorias</option>
+                    </select>
+                    <select id="filter-match-status" onchange="loadMatches()">
+                        <option value="">Todos os Status</option>
+                        <option value="scheduled">Agendados</option>
+                        <option value="playing">Em Curso</option>
+                        <option value="finished">Finalizados</option>
+                    </select>
+                </div>
+                <div id="matches-list" class="matches-list"></div>
+            </div>
+
+            <!-- Standings Page -->
+            <div id="standings-page" class="page">
+                <div class="page-header">
+                    <h2>Classificações</h2>
+                </div>
+                <div class="filters">
+                    <select id="filter-standing-category" onchange="loadStandings()">
+                        <option value="">Todas as Categorias</option>
+                    </select>
+                    <select id="filter-standing-group" onchange="loadStandings()">
+                        <option value="">Todos os Grupos</option>
+                        <option value="A">Grupo A</option>
+                        <option value="B">Grupo B</option>
+                    </select>
+                </div>
+                <div id="standings-list"></div>
+            </div>
+
+            <!-- Users Page -->
+            <div id="users-page" class="page">
+                <div class="page-header">
+                    <h2>Utilizadores</h2>
+                    <button class="btn btn-primary" onclick="openUserModal()" id="btn-new-user">+ Novo Utilizador</button>
+                </div>
+                <div id="users-list" class="items-grid"></div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Login Modal -->
+    <div id="login-modal" class="modal active">
+        <div class="modal-content">
+            <h3>Login</h3>
+            <form id="login-form" onsubmit="handleLogin(event)">
+                <div class="form-group">
+                    <label>Username</label>
+                    <input type="text" id="login-username" required autofocus>
+                </div>
+                <div class="form-group">
+                    <label>Password</label>
+                    <input type="password" id="login-password" required>
+                </div>
+                <div class="form-actions">
+                    <button type="submit" class="btn btn-primary">Entrar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modals -->
+    <div id="category-modal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeModal('category-modal')">&times;</span>
+            <h3 id="category-modal-title">Nova Categoria</h3>
+            <form id="category-form" onsubmit="saveCategory(event)">
+                <input type="hidden" id="category-id">
+                <div class="form-group">
+                    <label>Nome da Categoria</label>
+                    <input type="text" id="category-name" required placeholder="Ex: M3, M4, F4, MX">
+                </div>
+                <div class="form-actions">
+                    <button type="button" class="btn btn-secondary" onclick="closeModal('category-modal')">Cancelar</button>
+                    <button type="submit" class="btn btn-primary">Guardar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div id="team-modal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeModal('team-modal')">&times;</span>
+            <h3 id="team-modal-title">Nova Equipa</h3>
+            <form id="team-form" onsubmit="saveTeam(event)">
+                <input type="hidden" id="team-id">
+                <div class="form-group">
+                    <label>Nome da Equipa</label>
+                    <input type="text" id="team-name" required>
+                </div>
+                <div class="form-group">
+                    <label>Categoria</label>
+                    <select id="team-category" required></select>
+                </div>
+                <div class="form-group">
+                    <label>Grupo</label>
+                    <select id="team-group" required>
+                        <option value="A">Grupo A</option>
+                        <option value="B">Grupo B</option>
+                    </select>
+                </div>
+                <div class="form-actions">
+                    <button type="button" class="btn btn-secondary" onclick="closeModal('team-modal')">Cancelar</button>
+                    <button type="submit" class="btn btn-primary">Guardar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div id="match-modal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeModal('match-modal')">&times;</span>
+            <h3 id="match-modal-title">Novo Jogo</h3>
+            <form id="match-form" onsubmit="saveMatch(event)">
+                <input type="hidden" id="match-id">
+                <div class="form-group">
+                    <label>Categoria</label>
+                    <select id="match-category" required></select>
+                </div>
+                <div class="form-group">
+                    <label>Equipa 1</label>
+                    <select id="match-team1" required></select>
+                </div>
+                <div class="form-group">
+                    <label>Equipa 2</label>
+                    <select id="match-team2" required></select>
+                </div>
+                <div class="form-group">
+                    <label>Fase</label>
+                    <select id="match-phase" required>
+                        <option value="Group">Fase de Grupos</option>
+                        <option value="Semi-final">Semi-final</option>
+                        <option value="Final">Final</option>
+                        <option value="Third-Fourth">3º Lugar</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Grupo</label>
+                    <select id="match-group">
+                        <option value="">N/A</option>
+                        <option value="A">Grupo A</option>
+                        <option value="B">Grupo B</option>
+                    </select>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Data</label>
+                        <input type="date" id="match-date">
+                    </div>
+                    <div class="form-group">
+                        <label>Hora</label>
+                        <input type="time" id="match-time">
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>Campo</label>
+                    <input type="text" id="match-court" placeholder="Ex: Campo 1">
+                </div>
+                <div class="form-actions">
+                    <button type="button" class="btn btn-secondary" onclick="closeModal('match-modal')">Cancelar</button>
+                    <button type="submit" class="btn btn-primary">Guardar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>
+

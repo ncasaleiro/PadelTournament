@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Jogo - Padel Tournament Manager</title>
+    <link rel="stylesheet" href="styles.css">
+    <style>
+        .match-page {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        .match-header {
+            background: var(--card-bg);
+            border-radius: 0.5rem;
+            padding: 2rem;
+            margin-bottom: 2rem;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+        }
+
+        .match-title {
+            font-size: 2rem;
+            font-weight: 700;
+            margin-bottom: 1rem;
+        }
+
+        .match-meta-info {
+            display: flex;
+            gap: 2rem;
+            color: var(--text-secondary);
+        }
+
+        .scoreboard {
+            background: var(--card-bg);
+            border-radius: 0.5rem;
+            padding: 2rem;
+            margin-bottom: 2rem;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+        }
+
+        .scoreboard-header {
+            display: grid;
+            grid-template-columns: 2fr 1fr 1fr 1fr 1.5fr;
+            gap: 1rem;
+            padding: 1rem;
+            background: var(--bg-color);
+            border-radius: 0.5rem;
+            margin-bottom: 1rem;
+            font-weight: 600;
+        }
+
+        .scoreboard-row {
+            display: grid;
+            grid-template-columns: 2fr 1fr 1fr 1fr 1.5fr;
+            gap: 1rem;
+            padding: 1.5rem 1rem;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .scoreboard-row:last-child {
+            border-bottom: none;
+        }
+
+        .team-name {
+            font-weight: 600;
+            font-size: 1.125rem;
+        }
+
+        .set-score {
+            text-align: center;
+            font-size: 1.5rem;
+            font-weight: 700;
+        }
+
+        .game-score {
+            text-align: center;
+            font-size: 1.25rem;
+            font-weight: 600;
+        }
+
+        .score-controls {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 2rem;
+            margin-bottom: 2rem;
+        }
+
+        .score-control-team {
+            background: var(--card-bg);
+            border-radius: 0.5rem;
+            padding: 2rem;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+        }
+
+        .score-control-team h3 {
+            margin-bottom: 1.5rem;
+            text-align: center;
+        }
+
+        .score-buttons {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 1rem;
+        }
+
+        .btn-score {
+            width: 3rem;
+            height: 3rem;
+            border-radius: 50%;
+            border: none;
+            font-size: 1.5rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .btn-increment {
+            background: var(--success-color);
+            color: white;
+        }
+
+        .btn-increment:hover {
+            background: #059669;
+        }
+
+        .btn-decrement {
+            background: var(--danger-color);
+            color: white;
+        }
+
+        .btn-decrement:hover {
+            background: #dc2626;
+        }
+
+        .score-display {
+            font-size: 2rem;
+            font-weight: 700;
+            min-width: 4rem;
+            text-align: center;
+        }
+
+        .match-actions {
+            display: flex;
+            justify-content: center;
+            gap: 1rem;
+        }
+
+        .back-link {
+            display: inline-block;
+            margin-bottom: 1rem;
+            color: var(--primary-color);
+            text-decoration: none;
+            font-weight: 600;
+        }
+
+        .back-link:hover {
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body>
+    <div class="match-page">
+        <a href="index.html" class="back-link">← Voltar ao Dashboard</a>
+        
+        <div class="match-header">
+            <div class="match-title" id="match-title">Carregando...</div>
+            <div class="match-meta-info">
+                <span id="match-category"></span>
+                <span id="match-date"></span>
+                <span id="match-time"></span>
+                <span id="match-court"></span>
+                <span class="match-status" id="match-status">-</span>
+            </div>
+        </div>
+
+        <div class="scoreboard">
+            <div class="scoreboard-header">
+                <span></span>
+                <span>Set 1</span>
+                <span>Set 2</span>
+                <span>Set 3</span>
+                <span id="current-label">Jogo</span>
+            </div>
+            <div class="scoreboard-row">
+                <span class="team-name" id="team-a-name">Equipa A</span>
+                <span class="set-score" id="set-a-1">-</span>
+                <span class="set-score" id="set-a-2">-</span>
+                <span class="set-score" id="set-a-3">-</span>
+                <span class="game-score" id="game-a">0</span>
+            </div>
+            <div class="scoreboard-row">
+                <span class="team-name" id="team-b-name">Equipa B</span>
+                <span class="set-score" id="set-b-1">-</span>
+                <span class="set-score" id="set-b-2">-</span>
+                <span class="set-score" id="set-b-3">-</span>
+                <span class="game-score" id="game-b">0</span>
+            </div>
+        </div>
+
+        <div class="score-controls">
+            <div class="score-control-team">
+                <h3 id="control-team-a">Equipa A</h3>
+                <div class="score-buttons">
+                    <button class="btn-score btn-decrement" onclick="decrementScore('A')">−</button>
+                    <span class="score-display" id="score-display-a">0</span>
+                    <button class="btn-score btn-increment" onclick="incrementScore('A')">+</button>
+                </div>
+            </div>
+            <div class="score-control-team">
+                <h3 id="control-team-b">Equipa B</h3>
+                <div class="score-buttons">
+                    <button class="btn-score btn-decrement" onclick="decrementScore('B')">−</button>
+                    <span class="score-display" id="score-display-b">0</span>
+                    <button class="btn-score btn-increment" onclick="incrementScore('B')">+</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="match-actions">
+            <button class="btn btn-secondary" onclick="window.location.href='index.html'">Voltar</button>
+            <button class="btn btn-danger" id="finish-btn" onclick="finishMatch()" style="display: none;">Finalizar Jogo</button>
+        </div>
+    </div>
+
+    <script src="match.js"></script>
+</body>
+</html>
+
