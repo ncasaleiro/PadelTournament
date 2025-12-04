@@ -5,6 +5,7 @@
 
 ## 1. Functional Requirements
 
+
 ### 1.1 Category Management
 - The system shall allow admins to create, edit, and delete categories (e.g., M3, M4, F4, Mixed).  
 - Each category shall have independent brackets, standings, and results.  

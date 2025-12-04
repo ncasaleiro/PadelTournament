@@ -267,3 +267,4 @@ Login As User
     Wait Until Element Is Not Visible    id=login-modal    timeout=10s
     Wait Until Page Contains    Dashboard    timeout=10s
 
+
