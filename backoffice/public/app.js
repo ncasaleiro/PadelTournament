@@ -219,23 +219,34 @@ async function apiCall(endpoint, method = 'GET', body = null) {
         if (!response.ok) {
             // Try to get error message from response
             const contentType = response.headers.get('content-type');
+            let errorMessage = 'Erro na requisição';
+            
             if (contentType && contentType.includes('application/json')) {
                 try {
                     const errorData = await response.json();
-                    throw new Error(errorData.error || 'Erro na requisição');
+                    errorMessage = errorData.error || errorData.message || `Erro ${response.status}: ${response.statusText}`;
                 } catch (parseError) {
                     // If JSON parse fails, use status text
-                    throw new Error(response.statusText || 'Erro na requisição');
+                    errorMessage = response.statusText || `Erro ${response.status}`;
                 }
             } else {
                 // Not JSON, try text
                 try {
                     const text = await response.text();
-                    throw new Error(text || response.statusText || 'Erro na requisição');
+                    errorMessage = text || response.statusText || `Erro ${response.status}`;
                 } catch (textError) {
-                    throw new Error(response.statusText || 'Erro na requisição');
+                    errorMessage = response.statusText || `Erro ${response.status}`;
                 }
             }
+            
+            // Add status code info for better error messages
+            if (response.status === 403) {
+                errorMessage = 'Acesso negado. Apenas administradores podem realizar esta ação.';
+            } else if (response.status === 401) {
+                errorMessage = 'Não autenticado. Por favor, faça login novamente.';
+            }
+            
+            throw new Error(errorMessage);
         }
         
         // For successful responses, check if there's content
@@ -386,14 +397,29 @@ function openCategoryModal(categoryId = null) {
 async function saveCategory(event) {
     event.preventDefault();
     
+    // Only admin can create/edit categories
+    if (!currentUser || currentUser.role !== 'admin') {
+        alert('Apenas administradores podem criar ou editar categorias');
+        return;
+    }
+    
     const id = document.getElementById('category-id').value;
     const name = document.getElementById('category-name').value;
     
+    if (!name || name.trim() === '') {
+        alert('Por favor, insira um nome para a categoria');
+        return;
+    }
+    
+    console.log('Saving category:', { id, name, currentUser, token: localStorage.getItem('token') ? 'present' : 'missing' });
+    
     try {
         if (id) {
-            await apiCall(`/categories/${id}`, 'PUT', { name });
+            const result = await apiCall(`/categories/${id}`, 'PUT', { name: name.trim() });
+            console.log('Category updated:', result);
         } else {
-            await apiCall('/categories', 'POST', { name });
+            const result = await apiCall('/categories', 'POST', { name: name.trim() });
+            console.log('Category created:', result);
         }
         
         closeModal('category-modal');
@@ -401,6 +427,7 @@ async function saveCategory(event) {
         loadDashboard();
     } catch (error) {
         console.error('Error saving category:', error);
+        alert(`Erro ao guardar categoria: ${error.message || 'Erro desconhecido'}`);
     }
 }
 
@@ -522,16 +549,37 @@ function openTeamModal(teamId = null) {
 async function saveTeam(event) {
     event.preventDefault();
     
+    // Only admin can create/edit teams
+    if (!currentUser || currentUser.role !== 'admin') {
+        alert('Apenas administradores podem criar ou editar equipas');
+        return;
+    }
+    
     const id = document.getElementById('team-id').value;
     const name = document.getElementById('team-name').value;
     const categoryId = document.getElementById('team-category').value;
     const groupName = document.getElementById('team-group').value;
     
+    if (!name || name.trim() === '') {
+        alert('Por favor, insira um nome para a equipa');
+        return;
+    }
+    
+    if (!categoryId) {
+        alert('Por favor, selecione uma categoria');
+        return;
+    }
+    
+    if (!groupName) {
+        alert('Por favor, selecione um grupo');
+        return;
+    }
+    
     try {
         if (id) {
-            await apiCall(`/teams/${id}`, 'PUT', { name, category_id: categoryId, group_name: groupName });
+            await apiCall(`/teams/${id}`, 'PUT', { name: name.trim(), category_id: categoryId, group_name: groupName });
         } else {
-            await apiCall('/teams', 'POST', { name, category_id: categoryId, group_name: groupName });
+            await apiCall('/teams', 'POST', { name: name.trim(), category_id: categoryId, group_name: groupName });
         }
         
         closeModal('team-modal');
@@ -539,6 +587,7 @@ async function saveTeam(event) {
         loadDashboard();
     } catch (error) {
         console.error('Error saving team:', error);
+        alert(`Erro ao guardar equipa: ${error.message || 'Erro desconhecido'}`);
     }
 }
 
@@ -1666,4 +1715,5 @@ async function showMatchStatistics(matchId) {
         `;
     }
 }
+
 

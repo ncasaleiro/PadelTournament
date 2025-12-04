@@ -7,7 +7,7 @@ Library          JSONLibrary
 Library          OperatingSystem
 Library          Process
 
-Suite Setup       Create Session For API    Setup Test Data
+Suite Setup       Create Session And Login As Admin
 Suite Teardown    Cleanup Test Data
 Test Teardown     Run Keywords    Cleanup Test Match    Cleanup Test Teams    Cleanup Test Category
 
@@ -21,6 +21,9 @@ ${TEAM2_ID}          ${EMPTY}
 ${MATCH_ID}          ${EMPTY}
 ${MATCHES_FILE}      ${CURDIR}/../../data/matches.json
 ${DATABASE_FILE}     ${CURDIR}/../../data/database.json
+${ADMIN_TOKEN}       ${EMPTY}
+${ADMIN_USERNAME}    admin
+${ADMIN_PASSWORD}    admin123
 
 *** Test Cases ***
 
@@ -203,17 +206,19 @@ Test Database File Does Not Contain Matches
 
 *** Keywords ***
 
-Create Session For API
-    [Arguments]    ${setup_data}=${EMPTY}
+Create Session And Login As Admin
+    [Documentation]    Create HTTP session and login as admin
     Create Session    ${SESSION_NAME}    ${BASE_URL}
-    IF    '${setup_data}' != '${EMPTY}' and '${setup_data}' != 'False'
-        Setup Test Data
-    END
+    ${headers}=    Create Dictionary    Content-Type=application/json
+    ${body}=    Create Dictionary    username=${ADMIN_USERNAME}    password=${ADMIN_PASSWORD}
+    ${response}=    POST On Session    ${SESSION_NAME}    ${API_BASE}/auth/login    json=${body}    headers=${headers}
+    ${token}=    Get From Dictionary    ${response.json()}    token
+    Set Suite Variable    ${ADMIN_TOKEN}    ${token}
 
 Setup Test Data
     [Arguments]    ${create_match}=False    ${start_match}=False
     # Create category
-    ${headers}=    Create Dictionary    Content-Type=application/json
+    ${headers}=    Create Dictionary    Content-Type=application/json    Authorization=Bearer ${ADMIN_TOKEN}
     ${body}=    Create Dictionary    name=TestCategoryPersistence
     ${response}=    POST On Session    ${SESSION_NAME}    ${API_BASE}/categories    json=${body}    headers=${headers}
     Set Suite Variable    ${CATEGORY_ID}    ${response.json()['category_id']}
@@ -259,11 +264,12 @@ Cleanup Test Match
     END
 
 Cleanup Test Teams
+    ${headers}=    Create Dictionary    Authorization=Bearer ${ADMIN_TOKEN}
     IF    '${TEAM1_ID}' != '${EMPTY}'
-        DELETE On Session    ${SESSION_NAME}    ${API_BASE}/teams/${TEAM1_ID}    expected_status=any
+        DELETE On Session    ${SESSION_NAME}    ${API_BASE}/teams/${TEAM1_ID}    headers=${headers}    expected_status=any
     END
     IF    '${TEAM2_ID}' != '${EMPTY}'
-        DELETE On Session    ${SESSION_NAME}    ${API_BASE}/teams/${TEAM2_ID}    expected_status=any
+        DELETE On Session    ${SESSION_NAME}    ${API_BASE}/teams/${TEAM2_ID}    headers=${headers}    expected_status=any
     END
 
 Cleanup Test Category

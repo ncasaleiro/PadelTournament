@@ -97,35 +97,89 @@ class MatchStatistics {
           const prevGame = JSON.parse(previousState.current_game_data || '{}');
           const prevSet = JSON.parse(previousState.current_set_data || '{}');
           
-          // Check if point was scored
-          if (currentGame.pointsA > prevGame.pointsA || 
-              (currentSet.tiebreak && prevSet.tiebreak && currentSet.tiebreak.pointsA > prevSet.tiebreak.pointsA)) {
+          // Use team_scored if available (more accurate, includes 4th point)
+          if (state.team_scored) {
+            const team = state.team_scored === 'A' || state.team_scored === '1' ? 'team1' : 'team2';
+            const isTiebreak = currentSet.tiebreak !== null;
+            
             stats.pointFlow.push({
               timestamp: state.timestamp,
-              team: 'team1',
+              team: team,
               set: state.current_set_index + 1,
-              action: currentSet.tiebreak ? 'tiebreak_point' : 'point',
+              action: isTiebreak ? 'tiebreak_point' : 'point',
               score: {
                 sets: sets.length,
                 currentSet: currentSet,
                 currentGame: currentGame
               }
             });
-            stats.totalPointsTeam1++;
-          } else if (currentGame.pointsB > prevGame.pointsB || 
-                     (currentSet.tiebreak && prevSet.tiebreak && currentSet.tiebreak.pointsB > prevSet.tiebreak.pointsB)) {
-            stats.pointFlow.push({
-              timestamp: state.timestamp,
-              team: 'team2',
-              set: state.current_set_index + 1,
-              action: currentSet.tiebreak ? 'tiebreak_point' : 'point',
-              score: {
-                sets: sets.length,
-                currentSet: currentSet,
-                currentGame: currentGame
+            
+            if (team === 'team1') {
+              stats.totalPointsTeam1++;
+            } else {
+              stats.totalPointsTeam2++;
+            }
+          } else {
+            // Fallback: determine team from state changes
+            // Check if point was scored in normal game
+            if (currentGame.pointsA > prevGame.pointsA) {
+              stats.pointFlow.push({
+                timestamp: state.timestamp,
+                team: 'team1',
+                set: state.current_set_index + 1,
+                action: 'point',
+                score: {
+                  sets: sets.length,
+                  currentSet: currentSet,
+                  currentGame: currentGame
+                }
+              });
+              stats.totalPointsTeam1++;
+            } else if (currentGame.pointsB > prevGame.pointsB) {
+              stats.pointFlow.push({
+                timestamp: state.timestamp,
+                team: 'team2',
+                set: state.current_set_index + 1,
+                action: 'point',
+                score: {
+                  sets: sets.length,
+                  currentSet: currentSet,
+                  currentGame: currentGame
+                }
+              });
+              stats.totalPointsTeam2++;
+            }
+            
+            // Check if point was scored in tiebreak
+            if (currentSet.tiebreak && prevSet.tiebreak) {
+              if (currentSet.tiebreak.pointsA > prevSet.tiebreak.pointsA) {
+                stats.pointFlow.push({
+                  timestamp: state.timestamp,
+                  team: 'team1',
+                  set: state.current_set_index + 1,
+                  action: 'tiebreak_point',
+                  score: {
+                    sets: sets.length,
+                    currentSet: currentSet,
+                    currentGame: currentGame
+                  }
+                });
+                stats.totalPointsTeam1++;
+              } else if (currentSet.tiebreak.pointsB > prevSet.tiebreak.pointsB) {
+                stats.pointFlow.push({
+                  timestamp: state.timestamp,
+                  team: 'team2',
+                  set: state.current_set_index + 1,
+                  action: 'tiebreak_point',
+                  score: {
+                    sets: sets.length,
+                    currentSet: currentSet,
+                    currentGame: currentGame
+                  }
+                });
+                stats.totalPointsTeam2++;
               }
-            });
-            stats.totalPointsTeam2++;
+            }
           }
           
           // Check if game was won

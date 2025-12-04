@@ -21,6 +21,14 @@ echo ""
 echo "📄 Running file structure and code tests..."
 robot test_frontend_simple.robot
 
+echo ""
+echo "📝 Running edit categories and teams tests..."
+robot test_edit_categories_teams.robot
+
+echo ""
+echo "🔍 Running API validation tests..."
+robot test_frontend_api_validation.robot
+
 # Check if Selenium/Chrome is available for browser tests
 if command -v chromedriver &> /dev/null || command -v google-chrome &> /dev/null; then
     echo ""

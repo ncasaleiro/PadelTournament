@@ -74,6 +74,19 @@ robot --include referee test_frontend.robot
 - ✅ Criar jogo
 - ✅ Editar categoria
 - ✅ Eliminar categoria
+- ✅ Editar equipa (nome e grupo)
+- ✅ Eliminar equipa
+
+### Testes de Edição (`test_edit_categories_teams.robot`)
+Testes específicos para funcionalidades de edição via API:
+- ✅ Editar nome de categoria
+- ✅ Editar categoria múltiplas vezes
+- ✅ Editar nome de equipa
+- ✅ Editar grupo de equipa
+- ✅ Editar nome e grupo de equipa em conjunto
+- ✅ Editar equipa múltiplas vezes
+- ✅ Verificar que edição requer autenticação de admin
+- ✅ Validar persistência das alterações
 
 ### Funcionalidades Match
 - ✅ Botão iniciar jogo

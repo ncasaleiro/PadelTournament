@@ -4,7 +4,7 @@ Library          RequestsLibrary
 Library          Collections
 Library          String
 
-Suite Setup       Create Session For API
+Suite Setup       Create Session And Login As Admin
 Suite Teardown    Cleanup Test Data
 Test Teardown     Run Keywords    Cleanup Test Players    Cleanup Test Team    Cleanup Test Category
 
@@ -16,6 +16,9 @@ ${CATEGORY_ID}       ${EMPTY}
 ${TEAM_ID}           ${EMPTY}
 ${PLAYER1_ID}        ${EMPTY}
 ${PLAYER2_ID}        ${EMPTY}
+${ADMIN_TOKEN}       ${EMPTY}
+${ADMIN_USERNAME}    admin
+${ADMIN_PASSWORD}    admin123
 
 *** Test Cases ***
 Test Get All Players
@@ -132,9 +135,14 @@ Test Delete Non-Existent Player
     Status Should Be    404
 
 *** Keywords ***
-Create Session For API
-    [Documentation]    Create HTTP session for API calls
+Create Session And Login As Admin
+    [Documentation]    Create HTTP session and login as admin
     Create Session    ${SESSION_NAME}    ${BASE_URL}
+    ${headers}=    Create Dictionary    Content-Type=application/json
+    ${body}=    Create Dictionary    username=${ADMIN_USERNAME}    password=${ADMIN_PASSWORD}
+    ${response}=    POST On Session    ${SESSION_NAME}    ${API_BASE}/auth/login    json=${body}    headers=${headers}
+    ${token}=    Get From Dictionary    ${response.json()}    token
+    Set Suite Variable    ${ADMIN_TOKEN}    ${token}
 
 Create Test Category
     [Documentation]    Create a test category
@@ -146,7 +154,7 @@ Create Test Category
 Create Test Team
     [Documentation]    Create a test team
     Create Test Category
-    ${headers}=    Create Dictionary    Content-Type=application/json
+    ${headers}=    Create Dictionary    Content-Type=application/json    Authorization=Bearer ${ADMIN_TOKEN}
     ${body}=    Create Dictionary
     ...    name=TestTeam
     ...    category_id=${CATEGORY_ID}
@@ -167,19 +175,20 @@ Create Test Player
 
 Cleanup Test Players
     [Documentation]    Clean up test players created during tests
-    Run Keyword If    '${PLAYER1_ID}' != '${EMPTY}'    Delete Request    ${SESSION_NAME}    ${API_BASE}/players/${PLAYER1_ID}
-    Run Keyword If    '${PLAYER2_ID}' != '${EMPTY}'    Delete Request    ${SESSION_NAME}    ${API_BASE}/players/${PLAYER2_ID}
+    Run Keyword If    '${PLAYER1_ID}' != '${EMPTY}'    DELETE On Session    ${SESSION_NAME}    ${API_BASE}/players/${PLAYER1_ID}    expected_status=any
+    Run Keyword If    '${PLAYER2_ID}' != '${EMPTY}'    DELETE On Session    ${SESSION_NAME}    ${API_BASE}/players/${PLAYER2_ID}    expected_status=any
     Set Suite Variable    ${PLAYER1_ID}    ${EMPTY}
     Set Suite Variable    ${PLAYER2_ID}    ${EMPTY}
 
 Cleanup Test Team
     [Documentation]    Clean up test team
-    Run Keyword If    '${TEAM_ID}' != '${EMPTY}'    Delete Request    ${SESSION_NAME}    ${API_BASE}/teams/${TEAM_ID}
+    ${headers}=    Create Dictionary    Authorization=Bearer ${ADMIN_TOKEN}
+    Run Keyword If    '${TEAM_ID}' != '${EMPTY}'    DELETE On Session    ${SESSION_NAME}    ${API_BASE}/teams/${TEAM_ID}    headers=${headers}    expected_status=any
     Set Suite Variable    ${TEAM_ID}    ${EMPTY}
 
 Cleanup Test Category
     [Documentation]    Clean up test category
-    Run Keyword If    '${CATEGORY_ID}' != '${EMPTY}'    Delete Request    ${SESSION_NAME}    ${API_BASE}/categories/${CATEGORY_ID}
+    Run Keyword If    '${CATEGORY_ID}' != '${EMPTY}'    DELETE On Session    ${SESSION_NAME}    ${API_BASE}/categories/${CATEGORY_ID}    expected_status=any
     Set Suite Variable    ${CATEGORY_ID}    ${EMPTY}
 
 Cleanup Test Data
@@ -199,15 +208,16 @@ Cleanup Test Players From List
     [Arguments]    ${players}
     FOR    ${player}    IN    @{players}
         ${name}=    Get From Dictionary    ${player}    name
-        Run Keyword If    'TestPlayer' in '${name}' or 'UpdatedPlayer' in '${name}'    Delete Request    ${SESSION_NAME}    ${API_BASE}/players/${player['player_id']}
+        Run Keyword If    'TestPlayer' in '${name}' or 'UpdatedPlayer' in '${name}'    DELETE On Session    ${SESSION_NAME}    ${API_BASE}/players/${player['player_id']}    expected_status=any
     END
 
 Cleanup Test Teams From List
     [Documentation]    Clean up test teams from a list
     [Arguments]    ${teams}
+    ${headers}=    Create Dictionary    Authorization=Bearer ${ADMIN_TOKEN}
     FOR    ${team}    IN    @{teams}
         ${name}=    Get From Dictionary    ${team}    name
-        Run Keyword If    'TestTeam' in '${name}' or 'UpdatedTeam' in '${name}'    Delete Request    ${SESSION_NAME}    ${API_BASE}/teams/${team['team_id']}
+        Run Keyword If    'TestTeam' in '${name}' or 'UpdatedTeam' in '${name}'    DELETE On Session    ${SESSION_NAME}    ${API_BASE}/teams/${team['team_id']}    headers=${headers}    expected_status=any
     END
 
 Cleanup Test Categories From List
@@ -215,6 +225,6 @@ Cleanup Test Categories From List
     [Arguments]    ${categories}
     FOR    ${category}    IN    @{categories}
         ${name}=    Get From Dictionary    ${category}    name
-        Run Keyword If    'TestCategory' in '${name}' or 'UpdatedCategory' in '${name}'    Delete Request    ${SESSION_NAME}    ${API_BASE}/categories/${category['category_id']}
+        Run Keyword If    'TestCategory' in '${name}' or 'UpdatedCategory' in '${name}'    DELETE On Session    ${SESSION_NAME}    ${API_BASE}/categories/${category['category_id']}    expected_status=any
     END
 

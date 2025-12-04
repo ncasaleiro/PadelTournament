@@ -454,6 +454,31 @@ class ScoreEngine {
    * @param {string} team - Team that scored ('A' or 'B')
    */
   _saveStateToHistory(team = null) {
+    // Calculate current score summary for easier analysis
+    const scoreSummary = {
+      sets: this.sets.map(set => ({
+        gamesA: set.gamesA || 0,
+        gamesB: set.gamesB || 0,
+        tiebreak: set.tiebreak ? {
+          pointsA: set.tiebreak.pointsA || 0,
+          pointsB: set.tiebreak.pointsB || 0
+        } : null
+      })),
+      currentSet: {
+        gamesA: this.currentSet.gamesA || 0,
+        gamesB: this.currentSet.gamesB || 0,
+        tiebreak: this.currentSet.tiebreak ? {
+          pointsA: this.currentSet.tiebreak.pointsA || 0,
+          pointsB: this.currentSet.tiebreak.pointsB || 0
+        } : null
+      },
+      currentGame: {
+        pointsA: this.currentGame.pointsA || 0,
+        pointsB: this.currentGame.pointsB || 0,
+        deuceState: this.currentGame.deuceState || null
+      }
+    };
+    
     const state = {
       sets_data: JSON.stringify(this.sets),
       current_set_index: this.currentSetIndex,
@@ -462,13 +487,15 @@ class ScoreEngine {
       status: this.match.status,
       winner_team_id: this.match.winner_team_id,
       timestamp: new Date().toISOString(),
-      team_scored: team || null // Track which team scored this point
+      team_scored: team || null, // Track which team scored this point
+      score_summary: scoreSummary // Human-readable score summary
     };
     
     this.scoreHistory.push(state);
     
-    // Limit history to last 500 states to preserve full match history
-    if (this.scoreHistory.length > 500) {
+    // Limit history to last 1000 states to preserve full match history
+    // Increased from 500 to ensure very long matches are fully tracked
+    if (this.scoreHistory.length > 1000) {
       this.scoreHistory.shift();
     }
   }

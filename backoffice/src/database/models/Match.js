@@ -110,6 +110,19 @@ class Match {
     allowedFields.forEach(field => {
       if (updates[field] !== undefined) {
         if (['sets_data', 'current_set_data', 'current_game_data', 'events_data', 'score_history'].includes(field)) {
+          // For score_history, preserve existing history if update is empty/null/undefined
+          // This ensures manual edits don't lose the scoring history
+          if (field === 'score_history') {
+            const updateValue = updates[field];
+            // Only update if we have a valid value (not empty string, null, or undefined)
+            if (updateValue !== null && updateValue !== undefined && updateValue !== '') {
+              match[field] = typeof updateValue === 'string' 
+                ? updateValue 
+                : JSON.stringify(updateValue);
+            }
+            // If updateValue is empty/null/undefined, keep existing history
+            return;
+          }
           match[field] = typeof updates[field] === 'string' 
             ? updates[field] 
             : JSON.stringify(updates[field]);

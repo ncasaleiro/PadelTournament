@@ -32,6 +32,7 @@ Testes completos para a API de Jogadores:
 - DELETE player
 - Filtros por equipa
 - Validação de erros (400, 404)
+- **Nota**: Requer autenticação de admin para criar equipas (necessárias para criar jogadores)
 
 ### 4. `test_users_api.robot`
 Testes completos para a API de Utilizadores:
@@ -87,6 +88,17 @@ Testes unitários para a persistência de jogos em ficheiro separado:
 - Verificar que `sets_data` é persistido quando sets são completados
 - Validar estrutura JSON dos ficheiros
 - Garantir separação entre `matches.json` e `database.json`
+
+### 9. `test_edit_categories_teams.robot` (Frontend)
+Testes frontend para editar categorias e equipas via API:
+- Editar nome de categoria
+- Editar categoria múltiplas vezes
+- Editar nome de equipa
+- Editar grupo de equipa
+- Editar nome e grupo de equipa em conjunto
+- Editar equipa múltiplas vezes
+- Verificar que edição requer autenticação de admin
+- Validar persistência das alterações
 
 ## Limpeza de Dados
 

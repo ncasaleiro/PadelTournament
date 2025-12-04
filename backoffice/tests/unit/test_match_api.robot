@@ -5,7 +5,7 @@ Library          Collections
 Library          String
 Library          JSONLibrary
 
-Suite Setup       Create Session For API
+Suite Setup       Create Session And Login As Admin
 Suite Teardown    Cleanup Test Data
 Test Teardown     Run Keywords    Cleanup Test Match    Cleanup Test Teams    Cleanup Test Category
 
@@ -17,6 +17,9 @@ ${CATEGORY_ID}       ${EMPTY}
 ${TEAM1_ID}          ${EMPTY}
 ${TEAM2_ID}          ${EMPTY}
 ${MATCH_ID}          ${EMPTY}
+${ADMIN_TOKEN}       ${EMPTY}
+${ADMIN_USERNAME}    admin
+${ADMIN_PASSWORD}    admin123
 
 *** Test Cases ***
 
@@ -490,9 +493,14 @@ Test Edit Match Result Change Status
     Should Be Equal    ${match['status']}    playing
 
 *** Keywords ***
-Create Session For API
-    [Documentation]    Create HTTP session for API calls
+Create Session And Login As Admin
+    [Documentation]    Create HTTP session and login as admin
     Create Session    ${SESSION_NAME}    ${BASE_URL}
+    ${headers}=    Create Dictionary    Content-Type=application/json
+    ${body}=    Create Dictionary    username=${ADMIN_USERNAME}    password=${ADMIN_PASSWORD}
+    ${response}=    POST On Session    ${SESSION_NAME}    ${API_BASE}/auth/login    json=${body}    headers=${headers}
+    ${token}=    Get From Dictionary    ${response.json()}    token
+    Set Suite Variable    ${ADMIN_TOKEN}    ${token}
 
 Verify Matches Category
     [Arguments]    ${matches}
@@ -575,7 +583,7 @@ Create Test Category
 
 Create Test Teams
     [Documentation]    Create test teams
-    ${headers}=    Create Dictionary    Content-Type=application/json
+    ${headers}=    Create Dictionary    Content-Type=application/json    Authorization=Bearer ${ADMIN_TOKEN}
     ${body1}=    Create Dictionary    name=TestTeam1    category_id=${CATEGORY_ID}    group_name=A
     ${response1}=    POST On Session    ${SESSION_NAME}    ${API_BASE}/teams    json=${body1}    headers=${headers}
     Set Suite Variable    ${TEAM1_ID}    ${response1.json()['team_id']}
@@ -591,14 +599,15 @@ Cleanup Test Match
 
 Cleanup Test Teams
     [Documentation]    Clean up test teams created during tests
-    Run Keyword If    '${TEAM1_ID}' != '${EMPTY}'    DELETE On Session    ${SESSION_NAME}    ${API_BASE}/teams/${TEAM1_ID}
-    Run Keyword If    '${TEAM2_ID}' != '${EMPTY}'    DELETE On Session    ${SESSION_NAME}    ${API_BASE}/teams/${TEAM2_ID}
+    ${headers}=    Create Dictionary    Authorization=Bearer ${ADMIN_TOKEN}
+    Run Keyword If    '${TEAM1_ID}' != '${EMPTY}'    DELETE On Session    ${SESSION_NAME}    ${API_BASE}/teams/${TEAM1_ID}    headers=${headers}    expected_status=any
+    Run Keyword If    '${TEAM2_ID}' != '${EMPTY}'    DELETE On Session    ${SESSION_NAME}    ${API_BASE}/teams/${TEAM2_ID}    headers=${headers}    expected_status=any
     Set Suite Variable    ${TEAM1_ID}    ${EMPTY}
     Set Suite Variable    ${TEAM2_ID}    ${EMPTY}
 
 Cleanup Test Category
     [Documentation]    Clean up test category
-    Run Keyword If    '${CATEGORY_ID}' != '${EMPTY}'    DELETE On Session    ${SESSION_NAME}    ${API_BASE}/categories/${CATEGORY_ID}
+    Run Keyword If    '${CATEGORY_ID}' != '${EMPTY}'    DELETE On Session    ${SESSION_NAME}    ${API_BASE}/categories/${CATEGORY_ID}    expected_status=any
     Set Suite Variable    ${CATEGORY_ID}    ${EMPTY}
 
 Create And Finish Test Match
@@ -781,9 +790,10 @@ Cleanup Test Matches From List
 Cleanup Test Teams From List
     [Documentation]    Clean up test teams from a list
     [Arguments]    ${teams}
+    ${headers}=    Create Dictionary    Authorization=Bearer ${ADMIN_TOKEN}
     FOR    ${team}    IN    @{teams}
         ${name}=    Get From Dictionary    ${team}    name
-        Run Keyword If    'TestTeam' in '${name}'    Run Keyword And Ignore Error    DELETE On Session    ${SESSION_NAME}    ${API_BASE}/teams/${team['team_id']}
+        Run Keyword If    'TestTeam' in '${name}'    Run Keyword And Ignore Error    DELETE On Session    ${SESSION_NAME}    ${API_BASE}/teams/${team['team_id']}    headers=${headers}    expected_status=any
     END
 
 Cleanup Test Categories From List
@@ -791,6 +801,6 @@ Cleanup Test Categories From List
     [Arguments]    ${categories}
     FOR    ${category}    IN    @{categories}
         ${name}=    Get From Dictionary    ${category}    name
-        Run Keyword If    'TestCategory' in '${name}'    Run Keyword And Ignore Error    DELETE On Session    ${SESSION_NAME}    ${API_BASE}/categories/${category['category_id']}
+        Run Keyword If    'TestCategory' in '${name}'    Run Keyword And Ignore Error    DELETE On Session    ${SESSION_NAME}    ${API_BASE}/categories/${category['category_id']}    expected_status=any
     END
 

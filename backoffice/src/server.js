@@ -21,6 +21,37 @@ const JWT_SECRET = process.env.JWT_SECRET || 'your_jwt_secret_key_change_in_prod
 app.use(express.json());
 app.use(express.static(path.join(__dirname, '../public')));
 
+// Authentication middleware (optional - allows requests without token for backward compatibility)
+function authenticateToken(req, res, next) {
+  const authHeader = req.headers['authorization'];
+  const token = authHeader && authHeader.split(' ')[1]; // Bearer TOKEN
+  
+  if (!token) {
+    // Allow requests without token (backward compatibility)
+    req.user = null;
+    return next();
+  }
+  
+  jwt.verify(token, JWT_SECRET, (err, user) => {
+    if (err) {
+      // Invalid token - allow request but set user to null
+      req.user = null;
+      return next();
+    }
+    req.user = user;
+    next();
+  });
+}
+
+// Admin-only middleware
+function requireAdmin(req, res, next) {
+  // If no user or user is not admin, deny access
+  if (!req.user || req.user.role !== 'admin') {
+    return res.status(403).json({ error: 'Admin access required' });
+  }
+  next();
+}
+
 // ==================== CATEGORIES API ====================
 app.get('/api/categories', (req, res) => {
   try {
@@ -116,7 +147,7 @@ app.get('/api/teams/:id', (req, res) => {
   }
 });
 
-app.post('/api/teams', (req, res) => {
+app.post('/api/teams', authenticateToken, requireAdmin, (req, res) => {
   try {
     const { name, category_id, group_name } = req.body;
     if (!name || !category_id || !group_name) {
@@ -129,7 +160,7 @@ app.post('/api/teams', (req, res) => {
   }
 });
 
-app.put('/api/teams/:id', (req, res) => {
+app.put('/api/teams/:id', authenticateToken, requireAdmin, (req, res) => {
   try {
     const { name, category_id, group_name } = req.body;
     if (!name || !category_id || !group_name) {
@@ -145,7 +176,7 @@ app.put('/api/teams/:id', (req, res) => {
   }
 });
 
-app.delete('/api/teams/:id', (req, res) => {
+app.delete('/api/teams/:id', authenticateToken, requireAdmin, (req, res) => {
   try {
     const deleted = Team.delete(req.params.id);
     if (!deleted) {
@@ -284,6 +315,47 @@ app.get('/api/matches/:id/statistics', (req, res) => {
       },
       statistics,
       pointBreakdown
+    });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+app.get('/api/matches/:id/score-history', (req, res) => {
+  try {
+    const match = Match.getById(req.params.id);
+    if (!match) {
+      return res.status(404).json({ error: 'Match not found' });
+    }
+    
+    // Parse score history
+    let scoreHistory = [];
+    try {
+      scoreHistory = typeof match.score_history === 'string' 
+        ? JSON.parse(match.score_history || '[]')
+        : (match.score_history || []);
+    } catch (e) {
+      console.error('Error parsing score_history:', e);
+      scoreHistory = [];
+    }
+    
+    res.json({
+      match_id: match.match_id,
+      team1_name: match.team1_name,
+      team2_name: match.team2_name,
+      total_points: scoreHistory.length,
+      history: scoreHistory.map((entry, index) => ({
+        sequence: index + 1,
+        timestamp: entry.timestamp,
+        team_scored: entry.team_scored,
+        score_summary: entry.score_summary || {
+          sets: JSON.parse(entry.sets_data || '[]'),
+          currentSet: JSON.parse(entry.current_set_data || '{}'),
+          currentGame: JSON.parse(entry.current_game_data || '{}')
+        },
+        status: entry.status,
+        winner_team_id: entry.winner_team_id
+      }))
     });
   } catch (error) {
     res.status(500).json({ error: error.message });

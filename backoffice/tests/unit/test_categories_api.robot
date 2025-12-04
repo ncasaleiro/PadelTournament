@@ -60,8 +60,8 @@ Test Get Non-Existent Category
     Should Contain    ${response.json()['error']}    not found
 
 Test Update Category
-    [Documentation]    Should update category
-    [Tags]    category    update
+    [Documentation]    Should update category name
+    [Tags]    category    update    edit
     [Setup]    Create Test Category
     ${headers}=    Create Dictionary    Content-Type=application/json
     ${body}=    Create Dictionary    name=UpdatedCategory
@@ -69,6 +69,9 @@ Test Update Category
     Status Should Be    200
     Should Be Equal    ${response.json()['name']}    UpdatedCategory
     Should Be Equal    ${response.json()['category_id']}    ${CATEGORY_ID}
+    # Verify update persisted
+    ${get_response}=    GET On Session    ${SESSION_NAME}    ${API_BASE}/categories/${CATEGORY_ID}
+    Should Be Equal    ${get_response.json()['name']}    UpdatedCategory
 
 Test Update Category Without Name
     [Documentation]    Should return 400 when updating category without name
@@ -118,7 +121,7 @@ Create Test Category
 
 Cleanup Test Categories
     [Documentation]    Clean up test categories created during tests
-    Run Keyword If    '${CATEGORY_ID}' != '${EMPTY}'    Delete Request    ${SESSION_NAME}    ${API_BASE}/categories/${CATEGORY_ID}
+    Run Keyword If    '${CATEGORY_ID}' != '${EMPTY}'    DELETE On Session    ${SESSION_NAME}    ${API_BASE}/categories/${CATEGORY_ID}    expected_status=any
     Set Suite Variable    ${CATEGORY_ID}    ${EMPTY}
 
 Cleanup Test Data
@@ -133,6 +136,6 @@ Cleanup Test Categories From List
     [Arguments]    ${categories}
     FOR    ${category}    IN    @{categories}
         ${name}=    Get From Dictionary    ${category}    name
-        Run Keyword If    'TestCategory' in '${name}' or 'UpdatedCategory' in '${name}'    Delete Request    ${SESSION_NAME}    ${API_BASE}/categories/${category['category_id']}
+        Run Keyword If    'TestCategory' in '${name}' or 'UpdatedCategory' in '${name}'    DELETE On Session    ${SESSION_NAME}    ${API_BASE}/categories/${category['category_id']}    expected_status=any
     END
 
