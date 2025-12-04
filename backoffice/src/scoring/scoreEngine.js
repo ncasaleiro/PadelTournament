@@ -45,8 +45,8 @@ class ScoreEngine {
       throw new Error('Match is not in playing status');
     }
 
-    // Save current state to history before making changes
-    this._saveStateToHistory();
+    // Save current state to history before making changes (with team info)
+    this._saveStateToHistory(team);
 
     const isTeamA = team === 'A' || team === '1';
     
@@ -451,8 +451,9 @@ class ScoreEngine {
 
   /**
    * Save current state to history before making changes
+   * @param {string} team - Team that scored ('A' or 'B')
    */
-  _saveStateToHistory() {
+  _saveStateToHistory(team = null) {
     const state = {
       sets_data: JSON.stringify(this.sets),
       current_set_index: this.currentSetIndex,
@@ -460,13 +461,14 @@ class ScoreEngine {
       current_game_data: JSON.stringify(this.currentGame),
       status: this.match.status,
       winner_team_id: this.match.winner_team_id,
-      timestamp: new Date().toISOString()
+      timestamp: new Date().toISOString(),
+      team_scored: team || null // Track which team scored this point
     };
     
     this.scoreHistory.push(state);
     
-    // Limit history to last 100 states to prevent memory issues
-    if (this.scoreHistory.length > 100) {
+    // Limit history to last 500 states to preserve full match history
+    if (this.scoreHistory.length > 500) {
       this.scoreHistory.shift();
     }
   }

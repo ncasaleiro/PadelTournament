@@ -47,6 +47,10 @@ echo "Running test_score_engine.robot..."
 robot --outputdir results --log log.html --report report.html test_score_engine.robot
 
 echo ""
+echo "Running test_match_persistence.robot..."
+robot --outputdir results --log log.html --report report.html test_match_persistence.robot
+
+echo ""
 echo "=========================================="
 echo "All tests completed!"
 echo "Results are in: results/"

@@ -342,6 +342,15 @@ body {
     background: #dc2626;
 }
 
+.btn-info {
+    background: #0ea5e9;
+    color: white;
+}
+
+.btn-info:hover {
+    background: #0284c7;
+}
+
 .btn-sm {
     padding: 0.25rem 0.75rem;
     font-size: 0.75rem;
@@ -390,6 +399,21 @@ body {
     position: relative;
     max-height: 90vh;
     overflow-y: auto;
+}
+
+.modal-content h4 {
+    margin-top: 0;
+    margin-bottom: 1rem;
+    color: var(--primary-color);
+    font-size: 1.25rem;
+    border-bottom: 2px solid var(--border-color);
+    padding-bottom: 0.5rem;
+}
+
+.loading {
+    text-align: center;
+    padding: 2rem;
+    color: var(--text-secondary);
 }
 
 .close {

@@ -1,102 +1,65 @@
 const db = require('../db');
+const matchesDb = require('../matchesDb');
 const Category = require('./Category');
+const Team = require('./Team');
+
+// Helper function to enrich match with related data
+function enrichMatch(match) {
+  const data = db.load();
+  const team1 = data.teams.find(t => t.team_id === match.team1_id);
+  const team2 = data.teams.find(t => t.team_id === match.team2_id);
+  const category = Category.getById(match.category_id);
+  const winner = match.winner_team_id 
+    ? data.teams.find(t => t.team_id === match.winner_team_id)
+    : null;
+  
+  // Ensure use_super_tiebreak is a boolean
+  const useSuperTiebreak = match.use_super_tiebreak !== undefined 
+    ? (match.use_super_tiebreak === true || match.use_super_tiebreak === 'true' || match.use_super_tiebreak === 1)
+    : false;
+  
+  return {
+    ...match,
+    use_super_tiebreak: useSuperTiebreak,
+    team1_name: team1 ? team1.name : null,
+    team2_name: team2 ? team2.name : null,
+    category_name: category ? category.name : null,
+    winner_name: winner ? winner.name : null
+  };
+}
 
 class Match {
   static getAll() {
-    const data = db.load();
-    return data.matches.map(match => {
-      const team1 = data.teams.find(t => t.team_id === match.team1_id);
-      const team2 = data.teams.find(t => t.team_id === match.team2_id);
-      const category = Category.getById(match.category_id);
-      const winner = match.winner_team_id 
-        ? data.teams.find(t => t.team_id === match.winner_team_id)
-        : null;
-      
-      return {
-        ...match,
-        team1_name: team1 ? team1.name : null,
-        team2_name: team2 ? team2.name : null,
-        category_name: category ? category.name : null,
-        winner_name: winner ? winner.name : null
-      };
-    });
+    const matches = matchesDb.load();
+    return matches.map(match => enrichMatch(match));
   }
 
   static getById(id) {
-    const data = db.load();
-    const match = data.matches.find(m => m.match_id === parseInt(id));
+    const matches = matchesDb.load();
+    const match = matches.find(m => m.match_id === parseInt(id));
     if (!match) return null;
     
-    const team1 = data.teams.find(t => t.team_id === match.team1_id);
-    const team2 = data.teams.find(t => t.team_id === match.team2_id);
-    const category = Category.getById(match.category_id);
-    const winner = match.winner_team_id 
-      ? data.teams.find(t => t.team_id === match.winner_team_id)
-      : null;
-    
-    // Ensure use_super_tiebreak is a boolean
-    const useSuperTiebreak = match.use_super_tiebreak !== undefined 
-      ? (match.use_super_tiebreak === true || match.use_super_tiebreak === 'true' || match.use_super_tiebreak === 1)
-      : false;
-    
-    return {
-      ...match,
-      use_super_tiebreak: useSuperTiebreak,
-      team1_name: team1 ? team1.name : null,
-      team2_name: team2 ? team2.name : null,
-      category_name: category ? category.name : null,
-      winner_name: winner ? winner.name : null
-    };
+    return enrichMatch(match);
   }
 
   static getByCategory(categoryId) {
-    const data = db.load();
-    return data.matches
+    const matches = matchesDb.load();
+    return matches
       .filter(m => m.category_id === parseInt(categoryId))
-      .map(match => {
-        const team1 = data.teams.find(t => t.team_id === match.team1_id);
-        const team2 = data.teams.find(t => t.team_id === match.team2_id);
-        const category = Category.getById(match.category_id);
-        const winner = match.winner_team_id 
-          ? data.teams.find(t => t.team_id === match.winner_team_id)
-          : null;
-        
-        return {
-          ...match,
-          team1_name: team1 ? team1.name : null,
-          team2_name: team2 ? team2.name : null,
-          category_name: category ? category.name : null,
-          winner_name: winner ? winner.name : null
-        };
-      });
+      .map(match => enrichMatch(match));
   }
 
   static getByStatus(status) {
-    const data = db.load();
-    return data.matches
+    const matches = matchesDb.load();
+    return matches
       .filter(m => m.status === status)
-      .map(match => {
-        const team1 = data.teams.find(t => t.team_id === match.team1_id);
-        const team2 = data.teams.find(t => t.team_id === match.team2_id);
-        const category = Category.getById(match.category_id);
-        const winner = match.winner_team_id 
-          ? data.teams.find(t => t.team_id === match.winner_team_id)
-          : null;
-        
-        return {
-          ...match,
-          team1_name: team1 ? team1.name : null,
-          team2_name: team2 ? team2.name : null,
-          category_name: category ? category.name : null,
-          winner_name: winner ? winner.name : null
-        };
-      });
+      .map(match => enrichMatch(match));
   }
 
   static create(matchData) {
-    const data = db.load();
-    const newId = data.matches.length > 0 
-      ? Math.max(...data.matches.map(m => m.match_id)) + 1 
+    const matches = matchesDb.load();
+    const newId = matches.length > 0 
+      ? Math.max(...matches.map(m => m.match_id)) + 1 
       : 1;
     
     const match = {
@@ -123,17 +86,17 @@ class Match {
       updated_at: new Date().toISOString()
     };
     
-    data.matches.push(match);
-    db.save(data);
+    matches.push(match);
+    matchesDb.save(matches);
     return this.getById(newId);
   }
 
   static update(id, updates) {
-    const data = db.load();
-    const index = data.matches.findIndex(m => m.match_id === parseInt(id));
+    const matches = matchesDb.load();
+    const index = matches.findIndex(m => m.match_id === parseInt(id));
     if (index === -1) return null;
     
-    const match = data.matches[index];
+    const match = matches[index];
     
     // Update allowed fields
     const allowedFields = [
@@ -157,17 +120,17 @@ class Match {
     });
     
     match.updated_at = new Date().toISOString();
-    db.save(data);
+    matchesDb.save(matches);
     return this.getById(id);
   }
 
   static delete(id) {
-    const data = db.load();
-    const index = data.matches.findIndex(m => m.match_id === parseInt(id));
+    const matches = matchesDb.load();
+    const index = matches.findIndex(m => m.match_id === parseInt(id));
     if (index === -1) return false;
     
-    data.matches.splice(index, 1);
-    db.save(data);
+    matches.splice(index, 1);
+    matchesDb.save(matches);
     return true;
   }
 }

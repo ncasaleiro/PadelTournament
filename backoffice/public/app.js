@@ -642,6 +642,8 @@ function renderMatches() {
                     `<button class="btn btn-sm btn-primary" onclick="openMatchPage(${match.match_id})">${currentUser && currentUser.role === 'referee' ? 'Árbitro' : 'Ver Jogo'}</button>` : ''}
                 ${match.status === 'finished' && currentUser && currentUser.role === 'admin' ? 
                     `<button class="btn btn-sm btn-primary" onclick="openMatchPage(${match.match_id})">Ver Jogo</button>` : ''}
+                ${match.status === 'finished' ? 
+                    `<button class="btn btn-sm btn-info" onclick="showMatchStatistics(${match.match_id})">Estatísticas</button>` : ''}
                 ${currentUser && currentUser.role === 'admin' ? `
                     ${match.status === 'finished' ? 
                         `<button class="btn btn-sm btn-secondary" onclick="editMatchResult(${match.match_id})">Editar Resultado</button>` :
@@ -1452,6 +1454,216 @@ async function deleteUser(id) {
             !error.message.includes('end of data')) {
             alert(`Erro ao eliminar utilizador: ${error.message}`);
         }
+    }
+}
+
+// Match Statistics
+async function showMatchStatistics(matchId) {
+    const modal = document.getElementById('match-statistics-modal');
+    const content = document.getElementById('match-statistics-content');
+    const title = document.getElementById('match-statistics-modal-title');
+    
+    modal.classList.add('active');
+    content.innerHTML = '<div class="loading">A carregar estatísticas...</div>';
+    
+    try {
+        const response = await apiCall(`/matches/${matchId}/statistics`);
+        if (!response) {
+            throw new Error('Não foi possível carregar as estatísticas');
+        }
+        
+        const { match, statistics, pointBreakdown } = response;
+        title.textContent = `Estatísticas: ${match.team1_name} vs ${match.team2_name}`;
+        
+        // Build statistics HTML
+        let html = `
+            <div style="margin-bottom: 30px;">
+                <h4>Informação da Partida</h4>
+                <div class="form-row">
+                    <div class="form-group">
+                        <strong>Equipa 1:</strong> ${match.team1_name}
+                    </div>
+                    <div class="form-group">
+                        <strong>Equipa 2:</strong> ${match.team2_name}
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <strong>Categoria:</strong> ${match.category_name || 'N/A'}
+                    </div>
+                    <div class="form-group">
+                        <strong>Vencedor:</strong> ${match.winner_name || 'N/A'}
+                    </div>
+                </div>
+                ${match.scheduled_date ? `<div><strong>Data:</strong> ${match.scheduled_date} ${match.scheduled_time || ''}</div>` : ''}
+                ${match.court ? `<div><strong>Campo:</strong> ${match.court}</div>` : ''}
+            </div>
+            
+            <div style="margin-bottom: 30px;">
+                <h4>Resumo Estatístico</h4>
+                <div class="stats-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-top: 15px;">
+                    <div class="stat-card">
+                        <div class="stat-value">${statistics.totalSets}</div>
+                        <div class="stat-label">Sets Jogados</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value">${statistics.setsWonByTeam1}-${statistics.setsWonByTeam2}</div>
+                        <div class="stat-label">Sets Ganhos</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value">${statistics.totalGamesTeam1}-${statistics.totalGamesTeam2}</div>
+                        <div class="stat-label">Total de Jogos</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value">${statistics.totalPointsTeam1}-${statistics.totalPointsTeam2}</div>
+                        <div class="stat-label">Total de Pontos</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value">${statistics.tiebreaksPlayed}</div>
+                        <div class="stat-label">Tie-breaks</div>
+                    </div>
+                    ${statistics.totalDuration ? `
+                    <div class="stat-card">
+                        <div class="stat-value">${statistics.totalDuration.formatted}</div>
+                        <div class="stat-label">Duração</div>
+                    </div>
+                    ` : ''}
+                </div>
+            </div>
+            
+            <div style="margin-bottom: 30px;">
+                <h4>Detalhes por Set</h4>
+                <table style="width: 100%; border-collapse: collapse; margin-top: 15px;">
+                    <thead>
+                        <tr style="background: var(--bg-color); border-bottom: 2px solid var(--border-color);">
+                            <th style="padding: 10px; text-align: left;">Set</th>
+                            <th style="padding: 10px; text-align: center;">${match.team1_name}</th>
+                            <th style="padding: 10px; text-align: center;">${match.team2_name}</th>
+                            <th style="padding: 10px; text-align: center;">Tie-break</th>
+                            <th style="padding: 10px; text-align: center;">Vencedor</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+        `;
+        
+        statistics.setDetails.forEach(set => {
+            const tiebreakInfo = set.tiebreak ? 
+                `${set.tiebreak.pointsA || 0}-${set.tiebreak.pointsB || 0}` : 
+                '-';
+            const winner = set.winner === 'team1' ? match.team1_name : 
+                          set.winner === 'team2' ? match.team2_name : 'Empate';
+            
+            html += `
+                        <tr style="border-bottom: 1px solid var(--border-color);">
+                            <td style="padding: 10px;"><strong>Set ${set.setNumber}</strong></td>
+                            <td style="padding: 10px; text-align: center;">${set.gamesTeam1}</td>
+                            <td style="padding: 10px; text-align: center;">${set.gamesTeam2}</td>
+                            <td style="padding: 10px; text-align: center;">${tiebreakInfo}</td>
+                            <td style="padding: 10px; text-align: center;">${winner}</td>
+                        </tr>
+            `;
+        });
+        
+        html += `
+                    </tbody>
+                </table>
+            </div>
+        `;
+        
+        // Add point breakdown if available
+        if (pointBreakdown && pointBreakdown.length > 0) {
+            html += `
+                <div style="margin-bottom: 30px;">
+                    <h4>Fluxo de Pontuação (Últimos ${Math.min(50, pointBreakdown.length)} pontos)</h4>
+                    <div style="max-height: 400px; overflow-y: auto; margin-top: 15px;">
+                        <table style="width: 100%; border-collapse: collapse;">
+                            <thead style="position: sticky; top: 0; background: var(--bg-color);">
+                                <tr style="border-bottom: 2px solid var(--border-color);">
+                                    <th style="padding: 8px; text-align: left;">#</th>
+                                    <th style="padding: 8px; text-align: left;">Equipa</th>
+                                    <th style="padding: 8px; text-align: left;">Tipo</th>
+                                    <th style="padding: 8px; text-align: left;">Set</th>
+                                    <th style="padding: 8px; text-align: left;">Pontuação</th>
+                                    <th style="padding: 8px; text-align: left;">Hora</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+            `;
+            
+            // Show last 50 points
+            const recentPoints = pointBreakdown.slice(-50);
+            recentPoints.forEach((point, index) => {
+                const teamName = point.team === 'team1' ? match.team1_name : match.team2_name;
+                const actionLabel = point.type === 'tiebreak_point' ? 'Ponto Tie-break' : 
+                                   point.type === 'point' ? 'Ponto' : 'Jogo Ganho';
+                const scoreDisplay = point.score.tiebreak || point.score.game || '-';
+                const timestamp = new Date(point.timestamp).toLocaleTimeString('pt-PT');
+                
+                html += `
+                                <tr style="border-bottom: 1px solid var(--border-color);">
+                                    <td style="padding: 8px;">${pointBreakdown.length - recentPoints.length + index + 1}</td>
+                                    <td style="padding: 8px;"><strong>${teamName}</strong></td>
+                                    <td style="padding: 8px;">${actionLabel}</td>
+                                    <td style="padding: 8px;">Set ${point.set}</td>
+                                    <td style="padding: 8px;">${scoreDisplay}</td>
+                                    <td style="padding: 8px; font-size: 0.9em; color: #666;">${timestamp}</td>
+                                </tr>
+                `;
+            });
+            
+            html += `
+                            </tbody>
+                        </table>
+                    </div>
+                    ${pointBreakdown.length > 50 ? `<p style="margin-top: 10px; color: #666; font-size: 0.9em;">Mostrando últimos 50 pontos de ${pointBreakdown.length} totais</p>` : ''}
+                </div>
+            `;
+        }
+        
+        // Add additional statistics
+        if (statistics.longestSet || statistics.shortestSet) {
+            html += `
+                <div style="margin-bottom: 30px;">
+                    <h4>Estatísticas Adicionais</h4>
+                    <div class="form-row">
+                        ${statistics.longestSet ? `
+                        <div class="form-group">
+                            <strong>Set Mais Longo:</strong> Set ${statistics.longestSet.set} 
+                            (${statistics.longestSet.gamesTeam1}-${statistics.longestSet.gamesTeam2}, 
+                            ${statistics.longestSet.totalGames} jogos)
+                        </div>
+                        ` : ''}
+                        ${statistics.shortestSet ? `
+                        <div class="form-group">
+                            <strong>Set Mais Curto:</strong> Set ${statistics.shortestSet.set} 
+                            (${statistics.shortestSet.gamesTeam1}-${statistics.shortestSet.gamesTeam2}, 
+                            ${statistics.shortestSet.totalGames} jogos)
+                        </div>
+                        ` : ''}
+                    </div>
+                    ${statistics.averagePointsPerGame ? `
+                    <div>
+                        <strong>Média de Pontos por Jogo:</strong> ${statistics.averagePointsPerGame}
+                    </div>
+                    ` : ''}
+                    ${statistics.averageGamesPerSet ? `
+                    <div>
+                        <strong>Média de Jogos por Set:</strong> ${statistics.averageGamesPerSet}
+                    </div>
+                    ` : ''}
+                </div>
+            `;
+        }
+        
+        content.innerHTML = html;
+    } catch (error) {
+        console.error('Error loading match statistics:', error);
+        content.innerHTML = `
+            <div class="alert alert-warning">
+                <strong>Erro:</strong> Não foi possível carregar as estatísticas da partida.
+                <br>${error.message}
+            </div>
+        `;
     }
 }
 

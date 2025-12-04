@@ -77,6 +77,17 @@ Testes unitários para o motor de pontuação:
 - Undo functionality
 - Match completion
 
+### 8. `test_match_persistence.robot`
+Testes unitários para a persistência de jogos em ficheiro separado:
+- Verificar que jogos são guardados em `matches.json` e não em `database.json`
+- Verificar que atualizações são persistidas corretamente
+- Verificar que `score_history` é guardado quando se marca pontos
+- Verificar que eliminação remove o jogo de `matches.json`
+- Verificar que múltiplos jogos são guardados corretamente
+- Verificar que `sets_data` é persistido quando sets são completados
+- Validar estrutura JSON dos ficheiros
+- Garantir separação entre `matches.json` e `database.json`
+
 ## Limpeza de Dados
 
 **Todos os testes garantem que os dados criados são eliminados após a execução:**

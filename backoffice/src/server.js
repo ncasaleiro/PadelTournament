@@ -11,6 +11,7 @@ const Match = require('./database/models/Match');
 const Standing = require('./database/models/Standing');
 const User = require('./database/models/User');
 const ScoreEngine = require('./scoring/scoreEngine');
+const MatchStatistics = require('./utils/matchStatistics');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -254,6 +255,36 @@ app.get('/api/matches/:id', (req, res) => {
       return res.status(404).json({ error: 'Match not found' });
     }
     res.json(match);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+app.get('/api/matches/:id/statistics', (req, res) => {
+  try {
+    const match = Match.getById(req.params.id);
+    if (!match) {
+      return res.status(404).json({ error: 'Match not found' });
+    }
+    
+    const statistics = MatchStatistics.calculate(match);
+    const pointBreakdown = MatchStatistics.getPointBreakdown(match);
+    
+    res.json({
+      match: {
+        match_id: match.match_id,
+        team1_name: match.team1_name,
+        team2_name: match.team2_name,
+        category_name: match.category_name,
+        status: match.status,
+        winner_name: match.winner_name,
+        scheduled_date: match.scheduled_date,
+        scheduled_time: match.scheduled_time,
+        court: match.court
+      },
+      statistics,
+      pointBreakdown
+    });
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
