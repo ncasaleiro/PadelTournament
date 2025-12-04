@@ -50,10 +50,21 @@ class ScoreEngine {
 
     const isTeamA = team === 'A' || team === '1';
     
-    // Check if we're in tiebreak
-    if (this.currentSet.tiebreak !== null) {
+    // Check if this is super tie-break (3rd set, use_super_tiebreak enabled)
+    const isSuperTiebreak = this.match.use_super_tiebreak && this.currentSetIndex === 2;
+    
+    // For super tie-break, always use tiebreak scoring (no games)
+    if (isSuperTiebreak) {
+      // Initialize tiebreak if not already started
+      if (this.currentSet.tiebreak === null) {
+        this.currentSet.tiebreak = { pointsA: 0, pointsB: 0 };
+      }
+      this._incrementTiebreakPoint(isTeamA);
+    } else if (this.currentSet.tiebreak !== null) {
+      // Normal tiebreak (at 6-6)
       this._incrementTiebreakPoint(isTeamA);
     } else {
+      // Normal point scoring
       this._incrementNormalPoint(isTeamA);
     }
 
@@ -239,7 +250,7 @@ class ScoreEngine {
   }
 
   /**
-   * Tiebreak scoring (first to 7 with 2-point margin)
+   * Tiebreak scoring (first to 7 with 2-point margin, or 10 for super tie-break)
    */
   _incrementTiebreakPoint(isTeamA) {
     if (!this.currentSet.tiebreak) {
@@ -252,19 +263,35 @@ class ScoreEngine {
 
     tiebreak[pointKey]++;
 
-    // Win tiebreak: first to 7 with 2-point margin
+    // Check if this is a super tie-break (3rd set and use_super_tiebreak is true)
+    const isSuperTiebreak = this.match.use_super_tiebreak && this.currentSetIndex === 2;
+    const pointsToWin = isSuperTiebreak ? 10 : 7;
+
+    // Win tiebreak: first to 7 (or 10 for super) with 2-point margin
     const points = tiebreak[pointKey];
     const otherPoints = tiebreak[otherPointKey];
 
-    if (points >= 7 && points - otherPoints >= 2) {
+    if (points >= pointsToWin && points - otherPoints >= 2) {
       // Team wins tiebreak and set
-      // Set final score: 7-6 (winner has 7, loser has 6)
-      if (isTeamA) {
-        this.currentSet.gamesA = 7;
-        this.currentSet.gamesB = 6;
+      // Set final score: 7-6 (or 10-8/11-9/etc for super tie-break)
+      if (isSuperTiebreak) {
+        // For super tie-break, the set score is the tiebreak score
+        if (isTeamA) {
+          this.currentSet.gamesA = points;
+          this.currentSet.gamesB = otherPoints;
+        } else {
+          this.currentSet.gamesA = otherPoints;
+          this.currentSet.gamesB = points;
+        }
       } else {
-        this.currentSet.gamesA = 6;
-        this.currentSet.gamesB = 7;
+        // Normal tie-break: set ends 7-6
+        if (isTeamA) {
+          this.currentSet.gamesA = 7;
+          this.currentSet.gamesB = 6;
+        } else {
+          this.currentSet.gamesA = 6;
+          this.currentSet.gamesB = 7;
+        }
       }
       // Finish the set
       this._finishSet(isTeamA);
@@ -272,7 +299,7 @@ class ScoreEngine {
   }
 
   /**
-   * Decrement tiebreak point
+   * Decrement tiebreak point (handles both normal and super tie-break)
    */
   _decrementTiebreakPoint(isTeamA) {
     if (!this.currentSet.tiebreak) {
@@ -342,6 +369,20 @@ class ScoreEngine {
     const gamesA = this.currentSet.gamesA;
     const gamesB = this.currentSet.gamesB;
 
+    // Check if this is the 3rd set and super tie-break is enabled
+    const isSuperTiebreak = this.match.use_super_tiebreak && this.currentSetIndex === 2;
+
+    // For super tie-break in 3rd set, skip normal set logic
+    // Super tie-break starts immediately at 0-0 (no games played)
+    if (isSuperTiebreak) {
+      // In super tie-break, we don't play games, we go directly to tie-break at 0-0
+      if (gamesA === 0 && gamesB === 0 && this.currentSet.tiebreak === null) {
+        this.currentSet.tiebreak = { pointsA: 0, pointsB: 0 };
+      }
+      // Super tie-break is handled in _incrementTiebreakPoint
+      return;
+    }
+
     // Set won: 6 games with 2-game margin
     if (gamesA >= 6 && gamesA - gamesB >= 2) {
       this._finishSet(true);
@@ -362,14 +403,21 @@ class ScoreEngine {
    * Finish current set and move to next
    */
   _finishSet(teamAWon) {
-    // If tiebreak was played, set score is 7-6
+    // If tiebreak was played, set score depends on type
     if (this.currentSet.tiebreak) {
-      if (teamAWon) {
-        this.currentSet.gamesA = 7;
-        this.currentSet.gamesB = 6;
+      const isSuperTiebreak = this.match.use_super_tiebreak && this.currentSetIndex === 2;
+      if (isSuperTiebreak) {
+        // For super tie-break, the set score is already set to the tiebreak score
+        // No need to change it
       } else {
-        this.currentSet.gamesA = 6;
-        this.currentSet.gamesB = 7;
+        // Normal tie-break: set ends 7-6
+        if (teamAWon) {
+          this.currentSet.gamesA = 7;
+          this.currentSet.gamesB = 6;
+        } else {
+          this.currentSet.gamesA = 6;
+          this.currentSet.gamesB = 7;
+        }
       }
     }
 
@@ -393,6 +441,11 @@ class ScoreEngine {
       this.currentSetIndex++;
       this.currentSet = { gamesA: 0, gamesB: 0, tiebreak: null };
       this.currentGame = { pointsA: 0, pointsB: 0, deuceState: null };
+      
+      // If this is the 3rd set and super tie-break is enabled, start it immediately
+      if (this.match.use_super_tiebreak && this.currentSetIndex === 2) {
+        this.currentSet.tiebreak = { pointsA: 0, pointsB: 0 };
+      }
     }
   }
 

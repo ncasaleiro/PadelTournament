@@ -290,9 +290,57 @@
                     <label>Campo</label>
                     <input type="text" id="match-court" placeholder="Ex: Campo 1">
                 </div>
+                <div class="form-group">
+                    <label>
+                        <input type="checkbox" id="match-use-super-tiebreak">
+                        Usar Super Tie-break (3º set decidido por super tie-break até 10 pontos em vez de set normal)
+                    </label>
+                    <small class="form-text text-muted">
+                        Se marcado, o 3º set será decidido por um super tie-break até 10 pontos (com diferença de 2). 
+                        Se não marcado, o 3º set será jogado normalmente (até 6 jogos com diferença de 2, ou tie-break normal em caso de 6-6).
+                    </small>
+                </div>
                 <div class="form-actions">
                     <button type="button" class="btn btn-secondary" onclick="closeModal('match-modal')">Cancelar</button>
                     <button type="submit" class="btn btn-primary">Guardar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div id="match-result-modal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeModal('match-result-modal')">&times;</span>
+            <h3 id="match-result-modal-title">Editar Resultado da Partida</h3>
+            <form id="match-result-form" onsubmit="saveMatchResult(event)">
+                <input type="hidden" id="match-result-id">
+                <div class="alert alert-warning" style="margin-bottom: 15px;">
+                    <strong>Atenção:</strong> Esta funcionalidade permite corrigir eventuais erros no resultado da partida. 
+                    Apenas os resultados podem ser alterados. Outros dados da partida não podem ser modificados.
+                </div>
+                <div id="match-result-sets-container">
+                    <!-- Sets will be dynamically added here -->
+                </div>
+                <div class="form-group">
+                    <label>Equipa Vencedora</label>
+                    <select id="match-result-winner">
+                        <option value="">Nenhuma (Partida não finalizada)</option>
+                        <option value="team1">Equipa 1</option>
+                        <option value="team2">Equipa 2</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Estado da Partida</label>
+                    <select id="match-result-status">
+                        <option value="scheduled">Agendada</option>
+                        <option value="playing">Em Curso</option>
+                        <option value="finished">Finalizada</option>
+                        <option value="cancelled">Cancelada</option>
+                    </select>
+                </div>
+                <div class="form-actions">
+                    <button type="button" class="btn btn-secondary" onclick="closeModal('match-result-modal')">Cancelar</button>
+                    <button type="submit" class="btn btn-primary">Guardar Resultado</button>
                 </div>
             </form>
         </div>

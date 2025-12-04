@@ -3,6 +3,7 @@ Documentation    Unit tests for Match API endpoints - All match features
 Library          RequestsLibrary
 Library          Collections
 Library          String
+Library          JSONLibrary
 
 Suite Setup       Create Session For API
 Suite Teardown    Cleanup Test Data
@@ -61,12 +62,15 @@ Test Filter Matches By Status
 Test Filter Matches By Category
     [Documentation]    Should filter matches by category
     [Tags]    match    filter
+    [Setup]    Setup Test Data
     ${params}=    Create Dictionary    category_id=${CATEGORY_ID}
     ${response}=    GET On Session    ${SESSION_NAME}    ${API_BASE}/matches    params=${params}
     Status Should Be    200
-    FOR    ${match}    IN    @{response.json()}
-        Should Be Equal    ${match['category_id']}    ${CATEGORY_ID}
-    END
+    ${matches}=    Set Variable    ${response.json()}
+    # Only check if there are matches returned
+    ${matches_len}=    Get Length    ${matches}
+    Run Keyword If    ${matches_len} > 0    Verify Matches Category    ${matches}
+    ...    ELSE    Log    No matches found for category filter test
 
 Test Get Match By ID
     [Documentation]    Should get match by id
@@ -363,10 +367,139 @@ Test Delete Match
     ${response}=    DELETE On Session    ${SESSION_NAME}    ${API_BASE}/matches/${MATCH_ID}
     Status Should Be    204
 
+Test Edit Finished Match Result
+    [Documentation]    Should allow editing result of finished match
+    [Tags]    match    edit    result    finished
+    [Setup]    Create And Finish Test Match
+    ${headers}=    Create Dictionary    Content-Type=application/json
+    ${sets}=    Create List
+    ${set1}=    Create Dictionary    gamesA=${6}    gamesB=${4}    tiebreak=${None}
+    ${set2}=    Create Dictionary    gamesA=${6}    gamesB=${3}    tiebreak=${None}
+    Append To List    ${sets}    ${set1}
+    Append To List    ${sets}    ${set2}
+    ${sets_json}=    Evaluate    json.dumps($sets)    json
+    ${body}=    Create Dictionary
+    ...    sets_data=${sets_json}
+    ...    winner_team_id=${TEAM1_ID}
+    ...    status=finished
+    ${response}=    PUT On Session    ${SESSION_NAME}    ${API_BASE}/matches/${MATCH_ID}    json=${body}    headers=${headers}
+    Status Should Be    200
+    ${match}=    Set Variable    ${response.json()}
+    ${sets_json}=    Get From Dictionary    ${match}    sets_data
+    ${updated_sets}=    Evaluate    json.loads('${sets_json}')    json
+    ${sets_len}=    Get Length    ${updated_sets}
+    Should Be Equal    ${sets_len}    ${2}
+    Should Be Equal    ${updated_sets[0]['gamesA']}    ${6}
+    Should Be Equal    ${updated_sets[0]['gamesB']}    ${4}
+    Should Be Equal    ${match['winner_team_id']}    ${TEAM1_ID}
+
+Test Edit Finished Match Result With Tiebreak
+    [Documentation]    Should allow editing result with tiebreak
+    [Tags]    match    edit    result    finished    tiebreak
+    [Setup]    Create And Finish Test Match
+    ${headers}=    Create Dictionary    Content-Type=application/json
+    ${sets}=    Create List
+    ${tiebreak}=    Create Dictionary    pointsA=${7}    pointsB=${5}
+    ${set1}=    Create Dictionary    gamesA=${7}    gamesB=${6}    tiebreak=${tiebreak}
+    ${set2}=    Create Dictionary    gamesA=${6}    gamesB=${3}    tiebreak=${None}
+    Append To List    ${sets}    ${set1}
+    Append To List    ${sets}    ${set2}
+    ${sets_json}=    Evaluate    json.dumps($sets)    json
+    ${body}=    Create Dictionary
+    ...    sets_data=${sets_json}
+    ...    winner_team_id=${TEAM1_ID}
+    ...    status=finished
+    ${response}=    PUT On Session    ${SESSION_NAME}    ${API_BASE}/matches/${MATCH_ID}    json=${body}    headers=${headers}
+    Status Should Be    200
+    ${match}=    Set Variable    ${response.json()}
+    ${sets_json}=    Get From Dictionary    ${match}    sets_data
+    ${updated_sets}=    Evaluate    json.loads('${sets_json}')    json
+    ${first_set_tiebreak}=    Get From Dictionary    ${updated_sets[0]}    tiebreak
+    Should Not Be Equal    ${first_set_tiebreak}    ${None}
+    Should Be Equal    ${first_set_tiebreak['pointsA']}    ${7}
+    Should Be Equal    ${first_set_tiebreak['pointsB']}    ${5}
+
+Test Edit Finished Match Result With Super Tiebreak
+    [Documentation]    Should allow editing result with super tie-break in 3rd set
+    [Tags]    match    edit    result    finished    super_tiebreak
+    [Setup]    Create And Finish Test Match With Super Tiebreak
+    ${headers}=    Create Dictionary    Content-Type=application/json
+    ${sets}=    Create List
+    ${set1}=    Create Dictionary    gamesA=${6}    gamesB=${4}    tiebreak=${None}
+    ${set2}=    Create Dictionary    gamesA=${4}    gamesB=${6}    tiebreak=${None}
+    ${super_tiebreak}=    Create Dictionary    pointsA=${10}    pointsB=${8}
+    ${set3}=    Create Dictionary    gamesA=${10}    gamesB=${8}    tiebreak=${super_tiebreak}
+    Append To List    ${sets}    ${set1}
+    Append To List    ${sets}    ${set2}
+    Append To List    ${sets}    ${set3}
+    ${sets_json}=    Evaluate    json.dumps($sets)    json
+    ${body}=    Create Dictionary
+    ...    sets_data=${sets_json}
+    ...    winner_team_id=${TEAM1_ID}
+    ...    status=finished
+    ${response}=    PUT On Session    ${SESSION_NAME}    ${API_BASE}/matches/${MATCH_ID}    json=${body}    headers=${headers}
+    Status Should Be    200
+    ${match}=    Set Variable    ${response.json()}
+    ${sets_json}=    Get From Dictionary    ${match}    sets_data
+    ${updated_sets}=    Evaluate    json.loads('${sets_json}')    json
+    ${sets_len}=    Get Length    ${updated_sets}
+    Should Be Equal    ${sets_len}    ${3}
+    ${third_set}=    Get From List    ${updated_sets}    2
+    Should Be Equal    ${third_set['gamesA']}    ${10}
+    Should Be Equal    ${third_set['gamesB']}    ${8}
+    ${third_set_tiebreak}=    Get From Dictionary    ${third_set}    tiebreak
+    Should Not Be Equal    ${third_set_tiebreak}    ${None}
+    Should Be Equal    ${third_set_tiebreak['pointsA']}    ${10}
+    Should Be Equal    ${third_set_tiebreak['pointsB']}    ${8}
+
+Test Edit Match Result Change Winner
+    [Documentation]    Should allow changing winner when editing result
+    [Tags]    match    edit    result    finished
+    [Setup]    Create And Finish Test Match
+    ${headers}=    Create Dictionary    Content-Type=application/json
+    ${sets}=    Create List
+    ${set1}=    Create Dictionary    gamesA=${4}    gamesB=${6}    tiebreak=${None}
+    ${set2}=    Create Dictionary    gamesA=${3}    gamesB=${6}    tiebreak=${None}
+    Append To List    ${sets}    ${set1}
+    Append To List    ${sets}    ${set2}
+    ${sets_json}=    Evaluate    json.dumps($sets)    json
+    ${body}=    Create Dictionary
+    ...    sets_data=${sets_json}
+    ...    winner_team_id=${TEAM2_ID}
+    ...    status=finished
+    ${response}=    PUT On Session    ${SESSION_NAME}    ${API_BASE}/matches/${MATCH_ID}    json=${body}    headers=${headers}
+    Status Should Be    200
+    ${match}=    Set Variable    ${response.json()}
+    Should Be Equal    ${match['winner_team_id']}    ${TEAM2_ID}
+
+Test Edit Match Result Change Status
+    [Documentation]    Should allow changing status when editing result
+    [Tags]    match    edit    result    finished
+    [Setup]    Create And Finish Test Match
+    ${headers}=    Create Dictionary    Content-Type=application/json
+    ${sets}=    Create List
+    ${set1}=    Create Dictionary    gamesA=${6}    gamesB=${4}    tiebreak=${None}
+    Append To List    ${sets}    ${set1}
+    ${sets_json}=    Evaluate    json.dumps($sets)    json
+    ${body}=    Create Dictionary
+    ...    sets_data=${sets_json}
+    ...    status=playing
+    ${response}=    PUT On Session    ${SESSION_NAME}    ${API_BASE}/matches/${MATCH_ID}    json=${body}    headers=${headers}
+    Status Should Be    200
+    ${match}=    Set Variable    ${response.json()}
+    Should Be Equal    ${match['status']}    playing
+
 *** Keywords ***
 Create Session For API
     [Documentation]    Create HTTP session for API calls
     Create Session    ${SESSION_NAME}    ${BASE_URL}
+
+Verify Matches Category
+    [Arguments]    ${matches}
+    [Documentation]    Verify all matches belong to the test category
+    FOR    ${match}    IN    @{matches}
+        Should Be Equal    ${match['category_id']}    ${CATEGORY_ID}
+    END
 
 Setup Test Data
     [Documentation]    Create test data for match tests
@@ -384,6 +517,29 @@ Ensure Test Match Started
     ${match}=    Set Variable    ${response.json()}
     ${status}=    Get From Dictionary    ${match}    status
     Run Keyword If    '${status}' != 'playing'    Start Test Match
+    # Verify match is started
+    ${response}=    GET On Session    ${SESSION_NAME}    ${API_BASE}/matches/${MATCH_ID}
+    ${match}=    Set Variable    ${response.json()}
+    ${status}=    Get From Dictionary    ${match}    status
+    Should Be Equal    ${status}    playing
+
+Ensure Test Match With Super Tiebreak Started
+    [Documentation]    Ensure a test match with super tie-break exists and is started
+    Setup Test Data
+    ${headers}=    Create Dictionary    Content-Type=application/json
+    ${body}=    Create Dictionary
+    ...    team1_id=${TEAM1_ID}
+    ...    team2_id=${TEAM2_ID}
+    ...    category_id=${CATEGORY_ID}
+    ...    phase=Group
+    ...    group_name=A
+    ...    scheduled_date=2025-12-10
+    ...    scheduled_time=10:00
+    ...    court=Court 1
+    ...    use_super_tiebreak=${True}
+    ${response}=    POST On Session    ${SESSION_NAME}    ${API_BASE}/matches    json=${body}    headers=${headers}
+    Set Suite Variable    ${MATCH_ID}    ${response.json()['match_id']}
+    POST On Session    ${SESSION_NAME}    ${API_BASE}/matches/${MATCH_ID}/start
     # Verify match is started
     ${response}=    GET On Session    ${SESSION_NAME}    ${API_BASE}/matches/${MATCH_ID}
     ${match}=    Set Variable    ${response.json()}
@@ -430,20 +586,157 @@ Create Test Teams
 
 Cleanup Test Match
     [Documentation]    Clean up test match created during tests
-    Run Keyword If    '${MATCH_ID}' != '${EMPTY}'    Delete Request    ${SESSION_NAME}    ${API_BASE}/matches/${MATCH_ID}
+    Run Keyword If    '${MATCH_ID}' != '${EMPTY}'    DELETE On Session    ${SESSION_NAME}    ${API_BASE}/matches/${MATCH_ID}
     Set Suite Variable    ${MATCH_ID}    ${EMPTY}
 
 Cleanup Test Teams
     [Documentation]    Clean up test teams created during tests
-    Run Keyword If    '${TEAM1_ID}' != '${EMPTY}'    Delete Request    ${SESSION_NAME}    ${API_BASE}/teams/${TEAM1_ID}
-    Run Keyword If    '${TEAM2_ID}' != '${EMPTY}'    Delete Request    ${SESSION_NAME}    ${API_BASE}/teams/${TEAM2_ID}
+    Run Keyword If    '${TEAM1_ID}' != '${EMPTY}'    DELETE On Session    ${SESSION_NAME}    ${API_BASE}/teams/${TEAM1_ID}
+    Run Keyword If    '${TEAM2_ID}' != '${EMPTY}'    DELETE On Session    ${SESSION_NAME}    ${API_BASE}/teams/${TEAM2_ID}
     Set Suite Variable    ${TEAM1_ID}    ${EMPTY}
     Set Suite Variable    ${TEAM2_ID}    ${EMPTY}
 
 Cleanup Test Category
     [Documentation]    Clean up test category
-    Run Keyword If    '${CATEGORY_ID}' != '${EMPTY}'    Delete Request    ${SESSION_NAME}    ${API_BASE}/categories/${CATEGORY_ID}
+    Run Keyword If    '${CATEGORY_ID}' != '${EMPTY}'    DELETE On Session    ${SESSION_NAME}    ${API_BASE}/categories/${CATEGORY_ID}
     Set Suite Variable    ${CATEGORY_ID}    ${EMPTY}
+
+Create And Finish Test Match
+    [Documentation]    Create a test match and finish it
+    Setup Test Data
+    ${headers}=    Create Dictionary    Content-Type=application/json
+    ${body}=    Create Dictionary
+    ...    team1_id=${TEAM1_ID}
+    ...    team2_id=${TEAM2_ID}
+    ...    category_id=${CATEGORY_ID}
+    ...    phase=Group
+    ...    group_name=A
+    ...    scheduled_date=2025-12-10
+    ...    scheduled_time=10:00
+    ...    court=Court 1
+    ${response}=    POST On Session    ${SESSION_NAME}    ${API_BASE}/matches    json=${body}    headers=${headers}
+    Set Suite Variable    ${MATCH_ID}    ${response.json()['match_id']}
+    POST On Session    ${SESSION_NAME}    ${API_BASE}/matches/${MATCH_ID}/start
+    # Win first set 6-4
+    ${body_a}=    Create Dictionary    team=A
+    ${body_b}=    Create Dictionary    team=B
+    FOR    ${game}    IN RANGE    5
+        FOR    ${point}    IN RANGE    4
+            POST On Session    ${SESSION_NAME}    ${API_BASE}/matches/${MATCH_ID}/score/increment    json=${body_a}    headers=${headers}
+        END
+    END
+    FOR    ${game}    IN RANGE    4
+        FOR    ${point}    IN RANGE    4
+            POST On Session    ${SESSION_NAME}    ${API_BASE}/matches/${MATCH_ID}/score/increment    json=${body_b}    headers=${headers}
+        END
+    END
+    FOR    ${point}    IN RANGE    4
+        POST On Session    ${SESSION_NAME}    ${API_BASE}/matches/${MATCH_ID}/score/increment    json=${body_a}    headers=${headers}
+    END
+    # Win second set 6-3
+    FOR    ${game}    IN RANGE    5
+        FOR    ${point}    IN RANGE    4
+            POST On Session    ${SESSION_NAME}    ${API_BASE}/matches/${MATCH_ID}/score/increment    json=${body_a}    headers=${headers}
+        END
+    END
+    FOR    ${game}    IN RANGE    3
+        FOR    ${point}    IN RANGE    4
+            POST On Session    ${SESSION_NAME}    ${API_BASE}/matches/${MATCH_ID}/score/increment    json=${body_b}    headers=${headers}
+        END
+    END
+    FOR    ${point}    IN RANGE    4
+        POST On Session    ${SESSION_NAME}    ${API_BASE}/matches/${MATCH_ID}/score/increment    json=${body_a}    headers=${headers}
+    END
+    # Verify match is finished
+    ${response}=    GET On Session    ${SESSION_NAME}    ${API_BASE}/matches/${MATCH_ID}
+    ${match}=    Set Variable    ${response.json()}
+    Should Be Equal    ${match['status']}    finished
+
+Create And Finish Test Match With Super Tiebreak
+    [Documentation]    Create a test match with super tie-break and finish it
+    Setup Test Data
+    ${headers}=    Create Dictionary    Content-Type=application/json
+    ${body}=    Create Dictionary
+    ...    team1_id=${TEAM1_ID}
+    ...    team2_id=${TEAM2_ID}
+    ...    category_id=${CATEGORY_ID}
+    ...    phase=Group
+    ...    group_name=A
+    ...    scheduled_date=2025-12-10
+    ...    scheduled_time=10:00
+    ...    court=Court 1
+    ...    use_super_tiebreak=${True}
+    ${response}=    POST On Session    ${SESSION_NAME}    ${API_BASE}/matches    json=${body}    headers=${headers}
+    Set Suite Variable    ${MATCH_ID}    ${response.json()['match_id']}
+    POST On Session    ${SESSION_NAME}    ${API_BASE}/matches/${MATCH_ID}/start
+    # Win first set 6-4
+    ${body_a}=    Create Dictionary    team=A
+    ${body_b}=    Create Dictionary    team=B
+    FOR    ${game}    IN RANGE    5
+        FOR    ${point}    IN RANGE    4
+            POST On Session    ${SESSION_NAME}    ${API_BASE}/matches/${MATCH_ID}/score/increment    json=${body_a}    headers=${headers}
+        END
+    END
+    FOR    ${game}    IN RANGE    4
+        FOR    ${point}    IN RANGE    4
+            POST On Session    ${SESSION_NAME}    ${API_BASE}/matches/${MATCH_ID}/score/increment    json=${body_b}    headers=${headers}
+        END
+    END
+    FOR    ${point}    IN RANGE    4
+        POST On Session    ${SESSION_NAME}    ${API_BASE}/matches/${MATCH_ID}/score/increment    json=${body_a}    headers=${headers}
+    END
+    # Win second set 4-6 (Team B wins)
+    FOR    ${game}    IN RANGE    4
+        FOR    ${point}    IN RANGE    4
+            POST On Session    ${SESSION_NAME}    ${API_BASE}/matches/${MATCH_ID}/score/increment    json=${body_a}    headers=${headers}
+        END
+    END
+    FOR    ${game}    IN RANGE    5
+        FOR    ${point}    IN RANGE    4
+            POST On Session    ${SESSION_NAME}    ${API_BASE}/matches/${MATCH_ID}/score/increment    json=${body_b}    headers=${headers}
+        END
+    END
+    FOR    ${point}    IN RANGE    4
+        POST On Session    ${SESSION_NAME}    ${API_BASE}/matches/${MATCH_ID}/score/increment    json=${body_b}    headers=${headers}
+    END
+    # Check match status - should still be playing (1-1 in sets)
+    # Wait a bit for the match state to be updated after second set
+    Sleep    1s
+    ${response}=    GET On Session    ${SESSION_NAME}    ${API_BASE}/matches/${MATCH_ID}
+    ${match}=    Set Variable    ${response.json()}
+    Should Be Equal    ${match['status']}    playing    Match should still be playing after 1-1 sets
+    # Verify we're in 3rd set (current_set_index should be 2)
+    ${current_set_index}=    Get From Dictionary    ${match}    current_set_index
+    Should Be Equal    ${current_set_index}    ${2}    Should be in 3rd set (index 2)
+    # Verify super tie-break is enabled (convert to boolean for comparison)
+    ${use_super_tiebreak}=    Get From Dictionary    ${match}    use_super_tiebreak
+    ${use_super_tiebreak_bool}=    Evaluate    bool(${use_super_tiebreak}) if isinstance(${use_super_tiebreak}, (int, bool)) else ${use_super_tiebreak} == True or ${use_super_tiebreak} == 'true'
+    Should Be True    ${use_super_tiebreak_bool}    Super tie-break should be enabled
+    # Win super tie-break 10-8 (Team A wins) - super tie-break starts automatically at 0-0 in 3rd set
+    # Strategy: Alternate points to get to 8-8, then Team A gets 2 more to win 10-8
+    # This ensures we don't finish too early
+    # First, verify the match is ready for super tie-break scoring
+    ${current_set_data}=    Get From Dictionary    ${match}    current_set_data
+    ${current_set}=    Evaluate    json.loads('${current_set_data}')    json
+    Log    Current set data: ${current_set}
+    FOR    ${i}    IN RANGE    8
+        # Team A point
+        ${response}=    POST On Session    ${SESSION_NAME}    ${API_BASE}/matches/${MATCH_ID}/score/increment    json=${body_a}    headers=${headers}    expected_status=200
+        ${match_check}=    Set Variable    ${response.json()}
+        Should Be Equal    ${match_check['status']}    playing    Match should still be playing after ${i+1} Team A points
+        # Team B point
+        ${response}=    POST On Session    ${SESSION_NAME}    ${API_BASE}/matches/${MATCH_ID}/score/increment    json=${body_b}    headers=${headers}    expected_status=200
+        ${match_check}=    Set Variable    ${response.json()}
+        Should Be Equal    ${match_check['status']}    playing    Match should still be playing after ${i+1} Team B points
+    END
+    # Now Team A gets 2 more points to win 10-8
+    FOR    ${i}    IN RANGE    2
+        ${response}=    POST On Session    ${SESSION_NAME}    ${API_BASE}/matches/${MATCH_ID}/score/increment    json=${body_a}    headers=${headers}    expected_status=200
+    END
+    # Verify match is finished
+    ${response}=    GET On Session    ${SESSION_NAME}    ${API_BASE}/matches/${MATCH_ID}
+    ${match}=    Set Variable    ${response.json()}
+    Should Be Equal    ${match['status']}    finished
 
 Cleanup Test Data
     [Documentation]    Clean up all test data

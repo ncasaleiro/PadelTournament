@@ -34,8 +34,14 @@ class Match {
       ? data.teams.find(t => t.team_id === match.winner_team_id)
       : null;
     
+    // Ensure use_super_tiebreak is a boolean
+    const useSuperTiebreak = match.use_super_tiebreak !== undefined 
+      ? (match.use_super_tiebreak === true || match.use_super_tiebreak === 'true' || match.use_super_tiebreak === 1)
+      : false;
+    
     return {
       ...match,
+      use_super_tiebreak: useSuperTiebreak,
       team1_name: team1 ? team1.name : null,
       team2_name: team2 ? team2.name : null,
       category_name: category ? category.name : null,
@@ -112,6 +118,7 @@ class Match {
       referee_notes: matchData.referee_notes || null,
       events_data: matchData.events_data || JSON.stringify([]),
       score_history: JSON.stringify([]),
+      use_super_tiebreak: matchData.use_super_tiebreak || false,
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString()
     };
@@ -133,7 +140,8 @@ class Match {
       'team1_id', 'team2_id', 'category_id', 'phase', 'group_name',
       'scheduled_date', 'scheduled_time', 'court', 'status',
       'sets_data', 'current_set_index', 'current_set_data', 'current_game_data',
-      'winner_team_id', 'referee_notes', 'events_data', 'score_history'
+      'winner_team_id', 'referee_notes', 'events_data', 'score_history',
+      'use_super_tiebreak'
     ];
     
     allowedFields.forEach(field => {

@@ -157,6 +157,55 @@ Test Handle Empty JSON Strings
     Should Not Be Equal    ${result['current_set_data']}    ${None}
     Should Not Be Equal    ${result['current_game_data']}    ${None}
 
+Test Super Tiebreak Starts Automatically In 3rd Set
+    [Documentation]    Should start super tie-break automatically in 3rd set when enabled
+    ${result}=    Run Score Engine Test    super_tiebreak_starts_3rd_set
+    ${set_json}=    Get From Dictionary    ${result}    current_set_data
+    ${set}=    Evaluate    json.loads('${set_json}')    json
+    Should Not Be Equal    ${set['tiebreak']}    ${None}    Super tie-break should start automatically in 3rd set
+    Should Be Equal    ${set['gamesA']}    ${0}    Should start at 0-0
+    Should Be Equal    ${set['gamesB']}    ${0}    Should start at 0-0
+
+Test Super Tiebreak Requires 10 Points With 2-Point Margin
+    [Documentation]    Should require 10 points with 2-point margin to win super tie-break
+    ${result}=    Run Score Engine Test    super_tiebreak_10_points_margin
+    ${sets_json}=    Get From Dictionary    ${result}    sets_data
+    ${sets}=    Evaluate    json.loads('${sets_json}')    json
+    ${sets_len}=    Get Length    ${sets}
+    Should Be Equal    ${sets_len}    ${3}    Should have 3 completed sets (first two sets + super tie-break)
+    ${third_set}=    Get From List    ${sets}    2
+    ${tiebreak}=    Get From Dictionary    ${third_set}    tiebreak
+    Should Not Be Equal    ${tiebreak}    ${None}    Third set should have tiebreak
+    Should Be Equal    ${tiebreak['pointsA']}    ${10}    Should have 10 points
+    Should Be Equal    ${tiebreak['pointsB']}    ${8}    Opponent should have 8 points
+
+Test Super Tiebreak Set Score Is Tiebreak Score
+    [Documentation]    Should set the set score to the tiebreak score (e.g., 10-8)
+    ${result}=    Run Score Engine Test    super_tiebreak_set_score
+    ${sets_json}=    Get From Dictionary    ${result}    sets_data
+    ${sets}=    Evaluate    json.loads('${sets_json}')    json
+    ${sets_len}=    Get Length    ${sets}
+    Should Be Equal    ${sets_len}    ${3}    Should have 3 completed sets (first two sets + super tie-break)
+    ${third_set}=    Get From List    ${sets}    2
+    Should Be Equal    ${third_set['gamesA']}    ${10}    Set score should be 10-8
+    Should Be Equal    ${third_set['gamesB']}    ${8}    Set score should be 10-8
+    ${tiebreak}=    Get From Dictionary    ${third_set}    tiebreak
+    Should Not Be Equal    ${tiebreak}    ${None}    Third set should have tiebreak
+
+Test Super Tiebreak Not Used In First Two Sets
+    [Documentation]    Should not use super tie-break in first two sets
+    ${result}=    Run Score Engine Test    super_tiebreak_not_in_first_sets
+    ${set_json}=    Get From Dictionary    ${result}    current_set_data
+    ${set}=    Evaluate    json.loads('${set_json}')    json
+    # First set should use normal scoring (6-4)
+    ${sets_json}=    Get From Dictionary    ${result}    sets_data
+    ${sets}=    Evaluate    json.loads('${sets_json}')    json
+    ${sets_len}=    Get Length    ${sets}
+    Should Be Equal    ${sets_len}    ${1}    Should have one completed set
+    ${first_set}=    Get From List    ${sets}    0
+    Should Be Equal    ${first_set['gamesA']}    ${6}    First set should be 6-4
+    Should Be Equal    ${first_set['gamesB']}    ${4}    First set should be 6-4
+
 *** Keywords ***
 Run Score Engine Test
     [Arguments]    ${test_name}

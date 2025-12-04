@@ -299,6 +299,11 @@ app.post('/api/matches/:id/score/increment', (req, res) => {
       return res.status(400).json({ error: 'Team is required (A or B)' });
     }
 
+    // Ensure use_super_tiebreak is a boolean
+    if (match.use_super_tiebreak !== undefined) {
+      match.use_super_tiebreak = match.use_super_tiebreak === true || match.use_super_tiebreak === 'true' || match.use_super_tiebreak === 1;
+    }
+
     const engine = new ScoreEngine(match);
     const newState = engine.incrementPoint(team);
     
@@ -326,6 +331,11 @@ app.post('/api/matches/:id/score/decrement', (req, res) => {
     const { team } = req.body;
     if (!team) {
       return res.status(400).json({ error: 'Team is required (A or B)' });
+    }
+
+    // Ensure use_super_tiebreak is a boolean
+    if (match.use_super_tiebreak !== undefined) {
+      match.use_super_tiebreak = match.use_super_tiebreak === true || match.use_super_tiebreak === 'true' || match.use_super_tiebreak === 1;
     }
 
     const engine = new ScoreEngine(match);

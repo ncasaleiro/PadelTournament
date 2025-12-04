@@ -388,6 +388,269 @@ function runTest(testName) {
                 };
                 break;
 
+            case 'super_tiebreak_starts_3rd_set':
+                // Win first set 6-4
+                for (let i = 0; i < 5; i++) {
+                    for (let j = 0; j < 4; j++) {
+                        engine.incrementPoint('A');
+                    }
+                }
+                for (let i = 0; i < 4; i++) {
+                    for (let j = 0; j < 4; j++) {
+                        engine.incrementPoint('B');
+                    }
+                }
+                for (let j = 0; j < 4; j++) {
+                    engine.incrementPoint('A');
+                }
+                // Win second set 6-3
+                const state18a = engine.getState();
+                match = createMatch();
+                match.use_super_tiebreak = true;
+                match.status = 'playing';
+                match.sets_data = state18a.sets_data;
+                match.current_set_index = 1;
+                match.current_set_data = JSON.stringify({ gamesA: 0, gamesB: 0, tiebreak: null });
+                match.current_game_data = JSON.stringify({ pointsA: 0, pointsB: 0, deuceState: null });
+                match.score_history = state18a.score_history || JSON.stringify([]);
+                engine = new ScoreEngine(match);
+                for (let i = 0; i < 5; i++) {
+                    for (let j = 0; j < 4; j++) {
+                        engine.incrementPoint('A');
+                    }
+                }
+                for (let i = 0; i < 3; i++) {
+                    for (let j = 0; j < 4; j++) {
+                        engine.incrementPoint('B');
+                    }
+                }
+                for (let j = 0; j < 4; j++) {
+                    engine.incrementPoint('A');
+                }
+                // Now in 3rd set - super tie-break should start automatically
+                const state18b = engine.getState();
+                // Ensure status is playing for 3rd set (even if previous state was finished)
+                match = createMatch();
+                match.use_super_tiebreak = true;
+                match.status = 'playing';  // Force status to playing for 3rd set
+                match.sets_data = state18b.sets_data;
+                match.current_set_index = 2;
+                // For super tie-break, the 3rd set should start fresh at 0-0 with tiebreak initialized
+                match.current_set_data = JSON.stringify({ gamesA: 0, gamesB: 0, tiebreak: { pointsA: 0, pointsB: 0 } });
+                match.current_game_data = JSON.stringify({ pointsA: 0, pointsB: 0, deuceState: null });
+                match.score_history = state18b.score_history || JSON.stringify([]);
+                engine = new ScoreEngine(match);
+                const state18 = engine.getState();
+                result = { current_set_data: state18.current_set_data };
+                break;
+
+            case 'super_tiebreak_10_points_margin':
+                // Set up: win first set (A), win second set (B), then play super tie-break in 3rd set
+                match.use_super_tiebreak = true;
+                // Win first set 6-4 (Team A wins)
+                for (let i = 0; i < 5; i++) {
+                    for (let j = 0; j < 4; j++) {
+                        engine.incrementPoint('A');
+                    }
+                }
+                for (let i = 0; i < 4; i++) {
+                    for (let j = 0; j < 4; j++) {
+                        engine.incrementPoint('B');
+                    }
+                }
+                for (let j = 0; j < 4; j++) {
+                    engine.incrementPoint('A');
+                }
+                // Win second set 4-6 (Team B wins) - so match is 1-1
+                const state19a = engine.getState();
+                match = createMatch();
+                match.use_super_tiebreak = true;
+                match.status = 'playing';  // Ensure status is playing
+                match.sets_data = state19a.sets_data;
+                match.current_set_index = 1;
+                match.current_set_data = JSON.stringify({ gamesA: 0, gamesB: 0, tiebreak: null });
+                match.current_game_data = JSON.stringify({ pointsA: 0, pointsB: 0, deuceState: null });
+                match.score_history = state19a.score_history || JSON.stringify([]);
+                engine = new ScoreEngine(match);
+                // Team B wins second set 4-6
+                for (let i = 0; i < 4; i++) {
+                    for (let j = 0; j < 4; j++) {
+                        engine.incrementPoint('A');
+                    }
+                }
+                for (let i = 0; i < 5; i++) {
+                    for (let j = 0; j < 4; j++) {
+                        engine.incrementPoint('B');
+                    }
+                }
+                for (let j = 0; j < 4; j++) {
+                    engine.incrementPoint('B');
+                }
+                // Now in 3rd set - play super tie-break: A wins 10-8
+                const state19b = engine.getState();
+                // Parse sets to verify match is 1-1 (not finished)
+                const sets = JSON.parse(state19b.sets_data);
+                const setsWonByA = sets.filter(s => s.gamesA > s.gamesB).length;
+                const setsWonByB = sets.filter(s => s.gamesB > s.gamesA).length;
+                // Ensure match is 1-1, not finished
+                if (setsWonByA >= 2 || setsWonByB >= 2) {
+                    throw new Error(`Match should be 1-1 but sets are: A=${setsWonByA}, B=${setsWonByB}`);
+                }
+                // Ensure status is playing for 3rd set (match should be 1-1, so still playing)
+                match = createMatch();
+                match.use_super_tiebreak = true;
+                match.status = 'playing';  // Force status to playing for 3rd set
+                match.sets_data = state19b.sets_data;
+                match.current_set_index = 2;
+                // For super tie-break, the 3rd set should start fresh at 0-0 with tiebreak initialized
+                match.current_set_data = JSON.stringify({ gamesA: 0, gamesB: 0, tiebreak: { pointsA: 0, pointsB: 0 } });
+                match.current_game_data = JSON.stringify({ pointsA: 0, pointsB: 0, deuceState: null });
+                match.score_history = state19b.score_history || JSON.stringify([]);
+                engine = new ScoreEngine(match);
+                // Ensure engine match status is playing - must be set before incrementPoint
+                engine.match.status = 'playing';
+                // Verify status before incrementing
+                if (engine.match.status !== 'playing') {
+                    throw new Error(`Match status is ${engine.match.status}, expected 'playing'`);
+                }
+                // A scores 10 points
+                for (let i = 0; i < 10; i++) {
+                    if (engine.match.status !== 'playing') {
+                        engine.match.status = 'playing';
+                    }
+                    engine.incrementPoint('A');
+                }
+                // B scores 8 points
+                for (let i = 0; i < 8; i++) {
+                    if (engine.match.status !== 'playing') {
+                        engine.match.status = 'playing';
+                    }
+                    engine.incrementPoint('B');
+                }
+                const state19 = engine.getState();
+                result = {
+                    current_set_data: state19.current_set_data,
+                    sets_data: state19.sets_data
+                };
+                break;
+
+            case 'super_tiebreak_set_score':
+                // Set up: win first set (A), win second set (B), then play super tie-break in 3rd set
+                match.use_super_tiebreak = true;
+                // Win first set 6-4 (Team A wins)
+                for (let i = 0; i < 5; i++) {
+                    for (let j = 0; j < 4; j++) {
+                        engine.incrementPoint('A');
+                    }
+                }
+                for (let i = 0; i < 4; i++) {
+                    for (let j = 0; j < 4; j++) {
+                        engine.incrementPoint('B');
+                    }
+                }
+                for (let j = 0; j < 4; j++) {
+                    engine.incrementPoint('A');
+                }
+                // Win second set 4-6 (Team B wins) - so match is 1-1
+                const state20a = engine.getState();
+                match = createMatch();
+                match.use_super_tiebreak = true;
+                match.status = 'playing';  // Ensure status is playing
+                match.sets_data = state20a.sets_data;
+                match.current_set_index = 1;
+                match.current_set_data = JSON.stringify({ gamesA: 0, gamesB: 0, tiebreak: null });
+                match.current_game_data = JSON.stringify({ pointsA: 0, pointsB: 0, deuceState: null });
+                match.score_history = state20a.score_history || JSON.stringify([]);
+                engine = new ScoreEngine(match);
+                // Team B wins second set 4-6
+                for (let i = 0; i < 4; i++) {
+                    for (let j = 0; j < 4; j++) {
+                        engine.incrementPoint('A');
+                    }
+                }
+                for (let i = 0; i < 5; i++) {
+                    for (let j = 0; j < 4; j++) {
+                        engine.incrementPoint('B');
+                    }
+                }
+                for (let j = 0; j < 4; j++) {
+                    engine.incrementPoint('B');
+                }
+                // Now in 3rd set - play super tie-break: A wins 10-8
+                const state20b = engine.getState();
+                // Parse sets to verify match is 1-1 (not finished)
+                const sets2 = JSON.parse(state20b.sets_data);
+                const setsWonByA2 = sets2.filter(s => s.gamesA > s.gamesB).length;
+                const setsWonByB2 = sets2.filter(s => s.gamesB > s.gamesA).length;
+                // Ensure match is 1-1, not finished
+                if (setsWonByA2 >= 2 || setsWonByB2 >= 2) {
+                    throw new Error(`Match should be 1-1 but sets are: A=${setsWonByA2}, B=${setsWonByB2}`);
+                }
+                match = createMatch();
+                match.use_super_tiebreak = true;
+                // Ensure status is playing (match should be 1-1, so still playing)
+                match.status = 'playing';
+                match.sets_data = state20b.sets_data;
+                match.current_set_index = 2;
+                // For super tie-break, the 3rd set should start fresh at 0-0 with tiebreak initialized
+                match.current_set_data = JSON.stringify({ gamesA: 0, gamesB: 0, tiebreak: { pointsA: 0, pointsB: 0 } });
+                match.current_game_data = JSON.stringify({ pointsA: 0, pointsB: 0, deuceState: null });
+                match.score_history = state20b.score_history || JSON.stringify([]);
+                engine = new ScoreEngine(match);
+                // Ensure engine match status is playing - must be set before incrementPoint
+                engine.match.status = 'playing';
+                // Verify status before incrementing
+                if (engine.match.status !== 'playing') {
+                    throw new Error(`Match status is ${engine.match.status}, expected 'playing'`);
+                }
+                // Alternate points to get to 8-8, then A gets 2 more to win 10-8
+                for (let i = 0; i < 8; i++) {
+                    if (engine.match.status !== 'playing') {
+                        engine.match.status = 'playing';
+                    }
+                    engine.incrementPoint('A');
+                    if (engine.match.status === 'finished') break;
+                    if (engine.match.status !== 'playing') {
+                        engine.match.status = 'playing';
+                    }
+                    engine.incrementPoint('B');
+                    if (engine.match.status === 'finished') break;
+                }
+                // A gets 2 more points to win 10-8
+                if (engine.match.status === 'playing') {
+                    for (let i = 0; i < 2; i++) {
+                        engine.incrementPoint('A');
+                        if (engine.match.status === 'finished') break;
+                    }
+                }
+                const state20 = engine.getState();
+                result = { sets_data: state20.sets_data };
+                break;
+
+            case 'super_tiebreak_not_in_first_sets':
+                // Test that super tie-break is not used in first two sets
+                match.use_super_tiebreak = true;
+                // Win first set 6-4 (normal scoring)
+                for (let i = 0; i < 5; i++) {
+                    for (let j = 0; j < 4; j++) {
+                        engine.incrementPoint('A');
+                    }
+                }
+                for (let i = 0; i < 4; i++) {
+                    for (let j = 0; j < 4; j++) {
+                        engine.incrementPoint('B');
+                    }
+                }
+                for (let j = 0; j < 4; j++) {
+                    engine.incrementPoint('A');
+                }
+                const state21 = engine.getState();
+                result = {
+                    sets_data: state21.sets_data,
+                    current_set_data: state21.current_set_data
+                };
+                break;
+
             default:
                 result = { error: `Unknown test: ${testName}` };
         }

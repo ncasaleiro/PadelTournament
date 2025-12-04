@@ -640,8 +640,13 @@ function renderMatches() {
                     `<button class="btn btn-sm btn-primary" onclick="startMatch(${match.match_id})">Iniciar</button>` : ''}
                 ${match.status === 'scheduled' || match.status === 'playing' ? 
                     `<button class="btn btn-sm btn-primary" onclick="openMatchPage(${match.match_id})">${currentUser && currentUser.role === 'referee' ? 'Árbitro' : 'Ver Jogo'}</button>` : ''}
+                ${match.status === 'finished' && currentUser && currentUser.role === 'admin' ? 
+                    `<button class="btn btn-sm btn-primary" onclick="openMatchPage(${match.match_id})">Ver Jogo</button>` : ''}
                 ${currentUser && currentUser.role === 'admin' ? `
-                    <button class="btn btn-sm btn-secondary" onclick="editMatch(${match.match_id})">Editar</button>
+                    ${match.status === 'finished' ? 
+                        `<button class="btn btn-sm btn-secondary" onclick="editMatchResult(${match.match_id})">Editar Resultado</button>` :
+                        `<button class="btn btn-sm btn-secondary" onclick="editMatch(${match.match_id})">Editar</button>`
+                    }
                     <button class="btn btn-sm btn-danger" onclick="deleteMatch(${match.match_id})">Eliminar</button>
                 ` : ''}
             </div>
@@ -768,13 +773,23 @@ function openMatchModal(matchId = null) {
         document.getElementById('match-date').value = match.scheduled_date || '';
         document.getElementById('match-time').value = match.scheduled_time || '';
         document.getElementById('match-court').value = match.court || '';
-        title.textContent = 'Editar Jogo';
+        document.getElementById('match-use-super-tiebreak').checked = match.use_super_tiebreak || false;
+        
+        if (match.status === 'finished') {
+            // For finished matches, redirect to result editor
+            closeModal('match-modal');
+            editMatchResult(matchId);
+            return;
+        } else {
+            title.textContent = 'Editar Jogo';
+        }
         
         // Update team selects after setting category
         updateTeamSelects(match.category_id);
     } else {
         form.reset();
         document.getElementById('match-id').value = '';
+        document.getElementById('match-use-super-tiebreak').checked = false;
         title.textContent = 'Novo Jogo';
     }
     
@@ -811,6 +826,7 @@ async function saveMatch(event) {
     const date = document.getElementById('match-date').value || null;
     const time = document.getElementById('match-time').value || null;
     const court = document.getElementById('match-court').value || null;
+    const useSuperTiebreak = document.getElementById('match-use-super-tiebreak').checked;
     
     const matchData = {
         team1_id: team1Id,
@@ -820,7 +836,8 @@ async function saveMatch(event) {
         group_name: groupName,
         scheduled_date: date,
         scheduled_time: time,
-        court
+        court,
+        use_super_tiebreak: useSuperTiebreak
     };
     
     try {
@@ -844,6 +861,202 @@ function editMatch(id) {
         return;
     }
     openMatchModal(id);
+}
+
+function editMatchResult(id) {
+    if (!currentUser || currentUser.role !== 'admin') {
+        alert('Apenas administradores podem editar resultados');
+        return;
+    }
+    
+    const match = matches.find(m => m.match_id === id);
+    if (!match) {
+        alert('Jogo não encontrado');
+        return;
+    }
+    
+    if (match.status !== 'finished') {
+        alert('Apenas partidas finalizadas podem ter o resultado editado');
+        return;
+    }
+    
+    const modal = document.getElementById('match-result-modal');
+    const form = document.getElementById('match-result-form');
+    const container = document.getElementById('match-result-sets-container');
+    
+    document.getElementById('match-result-id').value = match.match_id;
+    
+    // Parse sets data
+    let sets = [];
+    try {
+        sets = match.sets_data ? JSON.parse(match.sets_data) : [];
+    } catch (e) {
+        console.error('Error parsing sets_data:', e);
+        sets = [];
+    }
+    
+    // Clear container
+    container.innerHTML = '';
+    
+    // Add sets
+    sets.forEach((set, index) => {
+        const setDiv = document.createElement('div');
+        setDiv.className = 'form-group';
+        setDiv.style.border = '1px solid #e2e8f0';
+        setDiv.style.padding = '15px';
+        setDiv.style.marginBottom = '15px';
+        setDiv.style.borderRadius = '6px';
+        setDiv.innerHTML = `
+            <label style="font-weight: 600; font-size: 1.1em; margin-bottom: 10px; display: block;">Set ${index + 1}</label>
+            <div class="form-row">
+                <div class="form-group">
+                    <label>Jogos Equipa 1</label>
+                    <input type="number" min="0" step="1" id="set-${index}-gamesA" value="${set.gamesA || 0}" required style="width: 100%;">
+                    <small class="form-text text-muted">Permite qualquer valor para tie-breaks prolongados (ex: 15-13, 20-18)</small>
+                </div>
+                <div class="form-group">
+                    <label>Jogos Equipa 2</label>
+                    <input type="number" min="0" step="1" id="set-${index}-gamesB" value="${set.gamesB || 0}" required style="width: 100%;">
+                    <small class="form-text text-muted">Permite qualquer valor para tie-breaks prolongados (ex: 15-13, 20-18)</small>
+                </div>
+            </div>
+            <div class="form-row" id="tiebreak-row-${index}" style="${set.tiebreak ? '' : 'display: none;'}">
+                <div class="form-group">
+                    <label>Tie-break Equipa 1</label>
+                    <input type="number" min="0" step="1" id="set-${index}-tiebreakA" value="${set.tiebreak ? (set.tiebreak.pointsA || 0) : 0}" style="width: 100%;">
+                    <small class="form-text text-muted">Tie-break normal: até 7 pontos. Super tie-break: até 10+ pontos. Permite qualquer valor.</small>
+                </div>
+                <div class="form-group">
+                    <label>Tie-break Equipa 2</label>
+                    <input type="number" min="0" step="1" id="set-${index}-tiebreakB" value="${set.tiebreak ? (set.tiebreak.pointsB || 0) : 0}" style="width: 100%;">
+                    <small class="form-text text-muted">Tie-break normal: até 7 pontos. Super tie-break: até 10+ pontos. Permite qualquer valor.</small>
+                </div>
+            </div>
+            <div style="margin-top: 10px;">
+                <button type="button" class="btn btn-sm btn-secondary" onclick="toggleTiebreak(${index})" id="tiebreak-toggle-${index}">
+                    ${set.tiebreak ? 'Remover Tie-break' : 'Adicionar Tie-break'}
+                </button>
+            </div>
+        `;
+        container.appendChild(setDiv);
+    });
+    
+    // Set winner
+    if (match.winner_team_id) {
+        if (match.winner_team_id === match.team1_id) {
+            document.getElementById('match-result-winner').value = 'team1';
+        } else if (match.winner_team_id === match.team2_id) {
+            document.getElementById('match-result-winner').value = 'team2';
+        }
+    }
+    
+    // Set status
+    document.getElementById('match-result-status').value = match.status || 'finished';
+    
+    modal.classList.add('active');
+}
+
+function toggleTiebreak(setIndex) {
+    const tiebreakRow = document.getElementById(`tiebreak-row-${setIndex}`);
+    const toggleBtn = document.getElementById(`tiebreak-toggle-${setIndex}`);
+    const tiebreakA = document.getElementById(`set-${setIndex}-tiebreakA`);
+    const tiebreakB = document.getElementById(`set-${setIndex}-tiebreakB`);
+    
+    if (tiebreakRow.style.display === 'none' || !tiebreakRow.style.display) {
+        tiebreakRow.style.display = 'flex';
+        toggleBtn.textContent = 'Remover Tie-break';
+        if (tiebreakA) tiebreakA.value = tiebreakA.value || '0';
+        if (tiebreakB) tiebreakB.value = tiebreakB.value || '0';
+    } else {
+        tiebreakRow.style.display = 'none';
+        toggleBtn.textContent = 'Adicionar Tie-break';
+        if (tiebreakA) tiebreakA.value = '0';
+        if (tiebreakB) tiebreakB.value = '0';
+    }
+}
+
+async function saveMatchResult(event) {
+    event.preventDefault();
+    
+    const id = document.getElementById('match-result-id').value;
+    const winner = document.getElementById('match-result-winner').value;
+    const status = document.getElementById('match-result-status').value;
+    
+    const match = matches.find(m => m.match_id === id);
+    if (!match) {
+        alert('Jogo não encontrado');
+        return;
+    }
+    
+    // Collect sets data
+    const sets = [];
+    const container = document.getElementById('match-result-sets-container');
+    const setDivs = container.querySelectorAll('.form-group');
+    
+    // Count actual set divs (each set has a form-group wrapper)
+    const actualSetDivs = Array.from(container.children).filter(child => 
+        child.querySelector(`input[id^="set-"][id$="-gamesA"]`)
+    );
+    
+    actualSetDivs.forEach((setDiv, index) => {
+        const gamesAInput = setDiv.querySelector(`#set-${index}-gamesA`);
+        const gamesBInput = setDiv.querySelector(`#set-${index}-gamesB`);
+        const tiebreakAInput = setDiv.querySelector(`#set-${index}-tiebreakA`);
+        const tiebreakBInput = setDiv.querySelector(`#set-${index}-tiebreakB`);
+        
+        const gamesA = parseInt(gamesAInput?.value || 0);
+        const gamesB = parseInt(gamesBInput?.value || 0);
+        
+        const setData = {
+            gamesA: gamesA,
+            gamesB: gamesB,
+            tiebreak: null
+        };
+        
+        // Check if tiebreak row is visible and has values
+        const tiebreakRow = document.getElementById(`tiebreak-row-${index}`);
+        if (tiebreakRow && tiebreakRow.style.display !== 'none' && tiebreakAInput && tiebreakBInput) {
+            const tiebreakA = parseInt(tiebreakAInput.value || 0);
+            const tiebreakB = parseInt(tiebreakBInput.value || 0);
+            if (tiebreakA > 0 || tiebreakB > 0) {
+                setData.tiebreak = {
+                    pointsA: tiebreakA,
+                    pointsB: tiebreakB
+                };
+            }
+        }
+        
+        sets.push(setData);
+    });
+    
+    // Determine winner_team_id
+    let winner_team_id = null;
+    if (winner === 'team1') {
+        winner_team_id = match.team1_id;
+    } else if (winner === 'team2') {
+        winner_team_id = match.team2_id;
+    }
+    
+    const matchData = {
+        sets_data: JSON.stringify(sets),
+        winner_team_id: winner_team_id,
+        status: status,
+        // Reset current set data if match is finished
+        current_set_index: status === 'finished' ? 0 : match.current_set_index,
+        current_set_data: status === 'finished' ? JSON.stringify({ gamesA: 0, gamesB: 0, tiebreak: null }) : match.current_set_data,
+        current_game_data: status === 'finished' ? JSON.stringify({ pointsA: 0, pointsB: 0, deuceState: null }) : match.current_game_data
+    };
+    
+    try {
+        await apiCall(`/matches/${id}`, 'PUT', matchData);
+        closeModal('match-result-modal');
+        loadMatches();
+        loadDashboard();
+        // Success - interface updates automatically, no need for alert
+    } catch (error) {
+        console.error('Error saving match result:', error);
+        alert(`Erro ao guardar resultado: ${error.message}`);
+    }
 }
 
 async function deleteMatch(id) {

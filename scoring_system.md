@@ -39,8 +39,49 @@
 
 ---
 
+---
+
+## Super Tie-Break
+
+The **Super Tie-break** is a variation of the normal tie-break, used to decide the third set in many tournaments.
+
+### Super Tie-Break Characteristics
+
+- **Points to win:** 10 points (instead of 7 in the normal tie-break)
+- **Required margin:** 2-point difference to win
+- **Scoring:** Numerical (0, 1, 2, 3, …), not 15/30/40
+- **Wins when reaching:** 10 points with a 2-point margin (examples: 10–8, 11–9, 15–13, etc.)
+
+### When is it used?
+
+**In tennis:**
+- In many tournaments, the third set is replaced by a super tie-break
+- Commonly used in doubles (ATP, ITF, amateur tournaments) to reduce playing time
+
+**In padel:**
+- Used in various amateur tournaments or specific rules to:
+  - Decide a third set
+  - Speed up the tournament
+- The mechanics are identical to tennis
+
+### Difference between Normal Tie-break and Super Tie-Break
+
+| Type | Points to win | When used |
+|------|---------------|-----------|
+| **Normal tie-break** | 7 | When score reaches 6–6 in a set |
+| **Super Tie-break** | 10 | Instead of the 3rd set |
+
+### Result Examples
+
+- **10–8:** Valid (2-point difference)
+- **10–9:** Not valid (must continue until 11–9 or more)
+- **15–13:** Valid (2-point difference)
+
+---
+
 ## Summary
 - Points → Games → Sets → Match
 - Best of 3 means you need **2 sets** to win.
 - Tie-breaks settle 6–6 situations.
+- **Super Tie-break** can replace the 3rd set (first to 10 with 2-point margin).
 - Golden point may apply depending on the competition.
