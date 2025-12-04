@@ -21,7 +21,8 @@ function createMatch() {
         sets_data: JSON.stringify([]),
         current_set_index: 0,
         current_set_data: JSON.stringify({ gamesA: 0, gamesB: 0, tiebreak: null }),
-        current_game_data: JSON.stringify({ pointsA: 0, pointsB: 0, deuceState: null })
+        current_game_data: JSON.stringify({ pointsA: 0, pointsB: 0, deuceState: null }),
+        score_history: JSON.stringify([])
     };
 }
 
@@ -98,7 +99,10 @@ function runTest(testName) {
                 break;
 
             case 'win_set_6_4':
-                for (let i = 0; i < 6; i++) {
+                // Team A wins 6 games, Team B wins 4 games
+                // Need to alternate to prevent early set finish
+                // First get to 5-4
+                for (let i = 0; i < 5; i++) {
                     for (let j = 0; j < 4; j++) {
                         engine.incrementPoint('A');
                     }
@@ -108,53 +112,79 @@ function runTest(testName) {
                         engine.incrementPoint('B');
                     }
                 }
+                // Now A wins one more game to finish set at 6-4
+                for (let j = 0; j < 4; j++) {
+                    engine.incrementPoint('A');
+                }
                 const state7 = engine.getState();
                 result = { sets_data: state7.sets_data };
                 break;
 
             case 'start_tiebreak_6_6':
-                for (let i = 0; i < 6; i++) {
+                // Reach 5-5 first
+                for (let i = 0; i < 5; i++) {
                     for (let j = 0; j < 4; j++) {
                         engine.incrementPoint('A');
                     }
                 }
-                for (let i = 0; i < 6; i++) {
+                for (let i = 0; i < 5; i++) {
                     for (let j = 0; j < 4; j++) {
                         engine.incrementPoint('B');
                     }
+                }
+                // Now 6-5 (Team A wins one more game)
+                for (let j = 0; j < 4; j++) {
+                    engine.incrementPoint('A');
+                }
+                // Finally 6-6 (Team B wins one more game, starting tiebreak)
+                for (let j = 0; j < 4; j++) {
+                    engine.incrementPoint('B');
                 }
                 const state8 = engine.getState();
                 result = { current_set_data: state8.current_set_data };
                 break;
 
             case 'increment_tiebreak_points':
-                // Set up 6-6
-                for (let i = 0; i < 6; i++) {
+                // Set up 6-6: 5-5, then 6-5, then 6-6
+                for (let i = 0; i < 5; i++) {
                     for (let j = 0; j < 4; j++) {
                         engine.incrementPoint('A');
                     }
                 }
-                for (let i = 0; i < 6; i++) {
+                for (let i = 0; i < 5; i++) {
                     for (let j = 0; j < 4; j++) {
                         engine.incrementPoint('B');
                     }
                 }
+                for (let j = 0; j < 4; j++) {
+                    engine.incrementPoint('A');
+                }
+                for (let j = 0; j < 4; j++) {
+                    engine.incrementPoint('B');
+                }
+                // Now increment tiebreak point
                 engine.incrementPoint('A');
                 const state9 = engine.getState();
                 result = { current_set_data: state9.current_set_data };
                 break;
 
             case 'win_tiebreak_7_5':
-                // Set up 6-6
-                for (let i = 0; i < 6; i++) {
+                // Set up 6-6: 5-5, then 6-5, then 6-6
+                for (let i = 0; i < 5; i++) {
                     for (let j = 0; j < 4; j++) {
                         engine.incrementPoint('A');
                     }
                 }
-                for (let i = 0; i < 6; i++) {
+                for (let i = 0; i < 5; i++) {
                     for (let j = 0; j < 4; j++) {
                         engine.incrementPoint('B');
                     }
+                }
+                for (let j = 0; j < 4; j++) {
+                    engine.incrementPoint('A');
+                }
+                for (let j = 0; j < 4; j++) {
+                    engine.incrementPoint('B');
                 }
                 // Win tiebreak 7-5
                 for (let i = 0; i < 7; i++) {
@@ -169,16 +199,22 @@ function runTest(testName) {
                 break;
 
             case 'tiebreak_2_point_margin':
-                // Set up 6-6
-                for (let i = 0; i < 6; i++) {
+                // Set up 6-6: 5-5, then 6-5, then 6-6
+                for (let i = 0; i < 5; i++) {
                     for (let j = 0; j < 4; j++) {
                         engine.incrementPoint('A');
                     }
                 }
-                for (let i = 0; i < 6; i++) {
+                for (let i = 0; i < 5; i++) {
                     for (let j = 0; j < 4; j++) {
                         engine.incrementPoint('B');
                     }
+                }
+                for (let j = 0; j < 4; j++) {
+                    engine.incrementPoint('A');
+                }
+                for (let j = 0; j < 4; j++) {
+                    engine.incrementPoint('B');
                 }
                 // Both reach 6 in tiebreak
                 for (let i = 0; i < 6; i++) {
@@ -196,7 +232,8 @@ function runTest(testName) {
 
             case 'finish_match_2_sets':
                 // Team A wins first set 6-4
-                for (let i = 0; i < 6; i++) {
+                // Get to 5-4 first
+                for (let i = 0; i < 5; i++) {
                     for (let j = 0; j < 4; j++) {
                         engine.incrementPoint('A');
                     }
@@ -206,8 +243,26 @@ function runTest(testName) {
                         engine.incrementPoint('B');
                     }
                 }
+                // A wins one more game to finish set at 6-4
+                for (let j = 0; j < 4; j++) {
+                    engine.incrementPoint('A');
+                }
+                // Verify match is still playing after first set
+                let state12a = engine.getState();
+                if (state12a.status !== 'playing') {
+                    // Recreate engine with updated match status
+                    match = createMatch();
+                    match.status = state12a.status;
+                    match.sets_data = state12a.sets_data;
+                    match.current_set_index = state12a.current_set_index;
+                    match.current_set_data = state12a.current_set_data;
+                    match.current_game_data = state12a.current_game_data;
+                    match.winner_team_id = state12a.winner_team_id;
+                    engine = new ScoreEngine(match);
+                }
                 // Team A wins second set 6-3
-                for (let i = 0; i < 6; i++) {
+                // Get to 5-3 first
+                for (let i = 0; i < 5; i++) {
                     for (let j = 0; j < 4; j++) {
                         engine.incrementPoint('A');
                     }
@@ -216,6 +271,10 @@ function runTest(testName) {
                     for (let j = 0; j < 4; j++) {
                         engine.incrementPoint('B');
                     }
+                }
+                // A wins one more game to finish set at 6-3
+                for (let j = 0; j < 4; j++) {
+                    engine.incrementPoint('A');
                 }
                 const state12 = engine.getState();
                 result = {
@@ -246,16 +305,22 @@ function runTest(testName) {
                 break;
 
             case 'decrement_tiebreak_point':
-                // Set up tiebreak
-                for (let i = 0; i < 6; i++) {
+                // Set up tiebreak: 5-5, then 6-5, then 6-6
+                for (let i = 0; i < 5; i++) {
                     for (let j = 0; j < 4; j++) {
                         engine.incrementPoint('A');
                     }
                 }
-                for (let i = 0; i < 6; i++) {
+                for (let i = 0; i < 5; i++) {
                     for (let j = 0; j < 4; j++) {
                         engine.incrementPoint('B');
                     }
+                }
+                for (let j = 0; j < 4; j++) {
+                    engine.incrementPoint('A');
+                }
+                for (let j = 0; j < 4; j++) {
+                    engine.incrementPoint('B');
                 }
                 engine.incrementPoint('A');
                 engine.incrementPoint('A');
@@ -265,16 +330,22 @@ function runTest(testName) {
                 break;
 
             case 'undo_tiebreak_win':
-                // Set up tiebreak and win it
-                for (let i = 0; i < 6; i++) {
+                // Set up tiebreak: 5-5, then 6-5, then 6-6
+                for (let i = 0; i < 5; i++) {
                     for (let j = 0; j < 4; j++) {
                         engine.incrementPoint('A');
                     }
                 }
-                for (let i = 0; i < 6; i++) {
+                for (let i = 0; i < 5; i++) {
                     for (let j = 0; j < 4; j++) {
                         engine.incrementPoint('B');
                     }
+                }
+                for (let j = 0; j < 4; j++) {
+                    engine.incrementPoint('A');
+                }
+                for (let j = 0; j < 4; j++) {
+                    engine.incrementPoint('B');
                 }
                 // Win tiebreak
                 for (let i = 0; i < 7; i++) {
@@ -329,6 +400,8 @@ function runTest(testName) {
 }
 
 runTest(testName);
+
+
 
 
 

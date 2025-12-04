@@ -62,6 +62,9 @@ app.put('/api/categories/:id', (req, res) => {
       return res.status(400).json({ error: 'Name is required' });
     }
     const category = Category.update(req.params.id, name);
+    if (!category) {
+      return res.status(404).json({ error: 'Category not found' });
+    }
     res.json(category);
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -70,7 +73,10 @@ app.put('/api/categories/:id', (req, res) => {
 
 app.delete('/api/categories/:id', (req, res) => {
   try {
-    Category.delete(req.params.id);
+    const deleted = Category.delete(req.params.id);
+    if (!deleted) {
+      return res.status(404).json({ error: 'Category not found' });
+    }
     res.status(204).send();
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -129,6 +135,9 @@ app.put('/api/teams/:id', (req, res) => {
       return res.status(400).json({ error: 'Name, category_id, and group_name are required' });
     }
     const team = Team.update(req.params.id, name, category_id, group_name);
+    if (!team) {
+      return res.status(404).json({ error: 'Team not found' });
+    }
     res.json(team);
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -137,7 +146,10 @@ app.put('/api/teams/:id', (req, res) => {
 
 app.delete('/api/teams/:id', (req, res) => {
   try {
-    Team.delete(req.params.id);
+    const deleted = Team.delete(req.params.id);
+    if (!deleted) {
+      return res.status(404).json({ error: 'Team not found' });
+    }
     res.status(204).send();
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -194,6 +206,9 @@ app.put('/api/players/:id', (req, res) => {
       return res.status(400).json({ error: 'Name and team_id are required' });
     }
     const player = Player.update(req.params.id, name, team_id, contact_info);
+    if (!player) {
+      return res.status(404).json({ error: 'Player not found' });
+    }
     res.json(player);
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -202,7 +217,10 @@ app.put('/api/players/:id', (req, res) => {
 
 app.delete('/api/players/:id', (req, res) => {
   try {
-    Player.delete(req.params.id);
+    const deleted = Player.delete(req.params.id);
+    if (!deleted) {
+      return res.status(404).json({ error: 'Player not found' });
+    }
     res.status(204).send();
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -421,7 +439,10 @@ app.put('/api/users/:id', (req, res) => {
 
 app.delete('/api/users/:id', (req, res) => {
   try {
-    User.delete(req.params.id);
+    const deleted = User.delete(req.params.id);
+    if (!deleted) {
+      return res.status(404).json({ error: 'User not found' });
+    }
     res.status(204).send();
   } catch (error) {
     res.status(500).json({ error: error.message });
