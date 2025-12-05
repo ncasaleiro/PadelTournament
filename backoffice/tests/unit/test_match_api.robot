@@ -33,7 +33,6 @@ Test Create Match
     ...    team2_id=${TEAM2_ID}
     ...    category_id=${CATEGORY_ID}
     ...    phase=Group
-    ...    group_name=A
     ...    scheduled_date=2025-12-10
     ...    scheduled_time=10:00
     ...    court=Court 1
@@ -540,7 +539,6 @@ Ensure Test Match With Super Tiebreak Started
     ...    team2_id=${TEAM2_ID}
     ...    category_id=${CATEGORY_ID}
     ...    phase=Group
-    ...    group_name=A
     ...    scheduled_date=2025-12-10
     ...    scheduled_time=10:00
     ...    court=Court 1
@@ -563,7 +561,6 @@ Create Test Match
     ...    team2_id=${TEAM2_ID}
     ...    category_id=${CATEGORY_ID}
     ...    phase=Group
-    ...    group_name=A
     ...    scheduled_date=2025-12-10
     ...    scheduled_time=10:00
     ...    court=Court 1
@@ -584,11 +581,11 @@ Create Test Category
 Create Test Teams
     [Documentation]    Create test teams
     ${headers}=    Create Dictionary    Content-Type=application/json    Authorization=Bearer ${ADMIN_TOKEN}
-    ${body1}=    Create Dictionary    name=TestTeam1    category_id=${CATEGORY_ID}    group_name=A
+    ${body1}=    Create Dictionary    name=TestTeam1    category_id=${CATEGORY_ID}
     ${response1}=    POST On Session    ${SESSION_NAME}    ${API_BASE}/teams    json=${body1}    headers=${headers}
     Set Suite Variable    ${TEAM1_ID}    ${response1.json()['team_id']}
     
-    ${body2}=    Create Dictionary    name=TestTeam2    category_id=${CATEGORY_ID}    group_name=A
+    ${body2}=    Create Dictionary    name=TestTeam2    category_id=${CATEGORY_ID}
     ${response2}=    POST On Session    ${SESSION_NAME}    ${API_BASE}/teams    json=${body2}    headers=${headers}
     Set Suite Variable    ${TEAM2_ID}    ${response2.json()['team_id']}
 
@@ -619,7 +616,6 @@ Create And Finish Test Match
     ...    team2_id=${TEAM2_ID}
     ...    category_id=${CATEGORY_ID}
     ...    phase=Group
-    ...    group_name=A
     ...    scheduled_date=2025-12-10
     ...    scheduled_time=10:00
     ...    court=Court 1
@@ -670,7 +666,6 @@ Create And Finish Test Match With Super Tiebreak
     ...    team2_id=${TEAM2_ID}
     ...    category_id=${CATEGORY_ID}
     ...    phase=Group
-    ...    group_name=A
     ...    scheduled_date=2025-12-10
     ...    scheduled_time=10:00
     ...    court=Court 1

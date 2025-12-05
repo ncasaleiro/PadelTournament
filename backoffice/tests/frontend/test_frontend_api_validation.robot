@@ -31,7 +31,6 @@ Test Create Match With Super Tiebreak
     ...    team2_id=${TEAM2_ID}
     ...    category_id=${CATEGORY_ID}
     ...    phase=Group
-    ...    group_name=A
     ...    scheduled_date=2025-12-15
     ...    scheduled_time=10:00
     ...    court=Court Test
@@ -198,11 +197,11 @@ Create Test Category
 Create Test Teams
     [Documentation]    Create test teams
     ${headers}=    Create Dictionary    Content-Type=application/json    Authorization=Bearer ${TOKEN}
-    ${body1}=    Create Dictionary    name=TestTeam1Frontend    category_id=${CATEGORY_ID}    group_name=A
+    ${body1}=    Create Dictionary    name=TestTeam1Frontend    category_id=${CATEGORY_ID}
     ${response1}=    POST On Session    ${SESSION_NAME}    ${API_BASE}/teams    json=${body1}    headers=${headers}
     Set Suite Variable    ${TEAM1_ID}    ${response1.json()['team_id']}
     
-    ${body2}=    Create Dictionary    name=TestTeam2Frontend    category_id=${CATEGORY_ID}    group_name=A
+    ${body2}=    Create Dictionary    name=TestTeam2Frontend    category_id=${CATEGORY_ID}
     ${response2}=    POST On Session    ${SESSION_NAME}    ${API_BASE}/teams    json=${body2}    headers=${headers}
     Set Suite Variable    ${TEAM2_ID}    ${response2.json()['team_id']}
 
@@ -219,7 +218,6 @@ Create Test Match
     ...    team2_id=${TEAM2_ID}
     ...    category_id=${CATEGORY_ID}
     ...    phase=Group
-    ...    group_name=A
     ...    scheduled_date=2025-12-15
     ...    scheduled_time=10:00
     ...    court=Court Test
@@ -235,7 +233,6 @@ Create And Finish Test Match
     ...    team2_id=${TEAM2_ID}
     ...    category_id=${CATEGORY_ID}
     ...    phase=Group
-    ...    group_name=A
     ...    scheduled_date=2025-12-15
     ...    scheduled_time=10:00
     ...    court=Court Test
@@ -286,7 +283,6 @@ Create Match With Tiebreak Result
     ...    team2_id=${TEAM2_ID}
     ...    category_id=${CATEGORY_ID}
     ...    phase=Group
-    ...    group_name=A
     ...    scheduled_date=2025-12-15
     ...    scheduled_time=10:00
     ...    court=Court Test
@@ -306,8 +302,9 @@ Create Match With Tiebreak Result
 
 Cleanup Test Data
     [Documentation]    Clean up test data
-    Run Keyword If    '${MATCH_ID}' != '${EMPTY}'    DELETE On Session    ${SESSION_NAME}    ${API_BASE}/matches/${MATCH_ID}
-    Run Keyword If    '${TEAM1_ID}' != '${EMPTY}'    DELETE On Session    ${SESSION_NAME}    ${API_BASE}/teams/${TEAM1_ID}
-    Run Keyword If    '${TEAM2_ID}' != '${EMPTY}'    DELETE On Session    ${SESSION_NAME}    ${API_BASE}/teams/${TEAM2_ID}
-    Run Keyword If    '${CATEGORY_ID}' != '${EMPTY}'    DELETE On Session    ${SESSION_NAME}    ${API_BASE}/categories/${CATEGORY_ID}
+    ${headers}=    Create Dictionary    Authorization=Bearer ${TOKEN}
+    Run Keyword If    '${MATCH_ID}' != '${EMPTY}'    DELETE On Session    ${SESSION_NAME}    ${API_BASE}/matches/${MATCH_ID}    expected_status=any
+    Run Keyword If    '${TEAM1_ID}' != '${EMPTY}'    DELETE On Session    ${SESSION_NAME}    ${API_BASE}/teams/${TEAM1_ID}    headers=${headers}    expected_status=any
+    Run Keyword If    '${TEAM2_ID}' != '${EMPTY}'    DELETE On Session    ${SESSION_NAME}    ${API_BASE}/teams/${TEAM2_ID}    headers=${headers}    expected_status=any
+    Run Keyword If    '${CATEGORY_ID}' != '${EMPTY}'    DELETE On Session    ${SESSION_NAME}    ${API_BASE}/categories/${CATEGORY_ID}    expected_status=any
 

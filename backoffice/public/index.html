@@ -115,11 +115,6 @@
                     <select id="filter-category" onchange="loadTeams()">
                         <option value="">Todas as Categorias</option>
                     </select>
-                    <select id="filter-group" onchange="loadTeams()">
-                        <option value="">Todos os Grupos</option>
-                        <option value="A">Grupo A</option>
-                        <option value="B">Grupo B</option>
-                    </select>
                 </div>
                 <div id="teams-list" class="items-grid"></div>
             </div>
@@ -152,11 +147,6 @@
                 <div class="filters">
                     <select id="filter-standing-category" onchange="loadStandings()">
                         <option value="">Todas as Categorias</option>
-                    </select>
-                    <select id="filter-standing-group" onchange="loadStandings()">
-                        <option value="">Todos os Grupos</option>
-                        <option value="A">Grupo A</option>
-                        <option value="B">Grupo B</option>
                     </select>
                 </div>
                 <div id="standings-list"></div>
@@ -212,6 +202,7 @@
         </div>
     </div>
 
+    <!-- Team Modal - Updated: group field removed -->
     <div id="team-modal" class="modal">
         <div class="modal-content">
             <span class="close" onclick="closeModal('team-modal')">&times;</span>
@@ -225,13 +216,6 @@
                 <div class="form-group">
                     <label>Categoria</label>
                     <select id="team-category" required></select>
-                </div>
-                <div class="form-group">
-                    <label>Grupo</label>
-                    <select id="team-group" required>
-                        <option value="A">Grupo A</option>
-                        <option value="B">Grupo B</option>
-                    </select>
                 </div>
                 <div class="form-actions">
                     <button type="button" class="btn btn-secondary" onclick="closeModal('team-modal')">Cancelar</button>
@@ -266,14 +250,6 @@
                         <option value="Semi-final">Semi-final</option>
                         <option value="Final">Final</option>
                         <option value="Third-Fourth">3º Lugar</option>
-                    </select>
-                </div>
-                <div class="form-group">
-                    <label>Grupo</label>
-                    <select id="match-group">
-                        <option value="">N/A</option>
-                        <option value="A">Grupo A</option>
-                        <option value="B">Grupo B</option>
                     </select>
                 </div>
                 <div class="form-row">

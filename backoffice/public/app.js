@@ -468,12 +468,10 @@ async function deleteCategory(id) {
 async function loadTeams() {
     try {
         const categoryId = document.getElementById('filter-category')?.value;
-        const group = document.getElementById('filter-group')?.value;
         
         let endpoint = '/teams';
         const params = new URLSearchParams();
         if (categoryId) params.append('category_id', categoryId);
-        if (group) params.append('group', group);
         if (params.toString()) endpoint += '?' + params.toString();
         
         teams = await apiCall(endpoint);
@@ -508,7 +506,6 @@ function renderTeams() {
             </div>
             <div class="item-card-body">
                 <div><strong>Categoria:</strong> ${team.category_name || 'N/A'}</div>
-                <div><strong>Grupo:</strong> ${team.group_name || 'N/A'}</div>
             </div>
         </div>
     `).join('');
@@ -535,7 +532,6 @@ function openTeamModal(teamId = null) {
         document.getElementById('team-id').value = team.team_id;
         document.getElementById('team-name').value = team.name;
         document.getElementById('team-category').value = team.category_id;
-        document.getElementById('team-group').value = team.group_name;
         title.textContent = 'Editar Equipa';
     } else {
         form.reset();
@@ -558,7 +554,6 @@ async function saveTeam(event) {
     const id = document.getElementById('team-id').value;
     const name = document.getElementById('team-name').value;
     const categoryId = document.getElementById('team-category').value;
-    const groupName = document.getElementById('team-group').value;
     
     if (!name || name.trim() === '') {
         alert('Por favor, insira um nome para a equipa');
@@ -570,16 +565,11 @@ async function saveTeam(event) {
         return;
     }
     
-    if (!groupName) {
-        alert('Por favor, selecione um grupo');
-        return;
-    }
-    
     try {
         if (id) {
-            await apiCall(`/teams/${id}`, 'PUT', { name: name.trim(), category_id: categoryId, group_name: groupName });
+            await apiCall(`/teams/${id}`, 'PUT', { name: name.trim(), category_id: categoryId });
         } else {
-            await apiCall('/teams', 'POST', { name: name.trim(), category_id: categoryId, group_name: groupName });
+            await apiCall('/teams', 'POST', { name: name.trim(), category_id: categoryId });
         }
         
         closeModal('team-modal');
@@ -820,7 +810,6 @@ function openMatchModal(matchId = null) {
         document.getElementById('match-team1').value = match.team1_id;
         document.getElementById('match-team2').value = match.team2_id;
         document.getElementById('match-phase').value = match.phase;
-        document.getElementById('match-group').value = match.group_name || '';
         document.getElementById('match-date').value = match.scheduled_date || '';
         document.getElementById('match-time').value = match.scheduled_time || '';
         document.getElementById('match-court').value = match.court || '';
@@ -873,7 +862,6 @@ async function saveMatch(event) {
     const team2Id = document.getElementById('match-team2').value;
     const categoryId = document.getElementById('match-category').value;
     const phase = document.getElementById('match-phase').value;
-    const groupName = document.getElementById('match-group').value || null;
     const date = document.getElementById('match-date').value || null;
     const time = document.getElementById('match-time').value || null;
     const court = document.getElementById('match-court').value || null;
@@ -884,7 +872,6 @@ async function saveMatch(event) {
         team2_id: team2Id,
         category_id: categoryId,
         phase,
-        group_name: groupName,
         scheduled_date: date,
         scheduled_time: time,
         court,
@@ -1218,12 +1205,10 @@ window.openMatchPage = openMatchPage;
 async function loadStandings() {
     try {
         const categoryId = document.getElementById('filter-standing-category')?.value;
-        const group = document.getElementById('filter-standing-group')?.value;
         
         let endpoint = '/standings';
         const params = new URLSearchParams();
         if (categoryId) params.append('category_id', categoryId);
-        if (group) params.append('group', group);
         if (params.toString()) endpoint += '?' + params.toString();
         
         standings = await apiCall(endpoint);
@@ -1241,14 +1226,13 @@ function renderStandings() {
         return;
     }
     
-    // Group by category and group
+    // Group by category only
     const grouped = {};
     standings.forEach(standing => {
-        const key = `${standing.category_name}-${standing.group_name}`;
+        const key = standing.category_name;
         if (!grouped[key]) {
             grouped[key] = {
                 category: standing.category_name,
-                group: standing.group_name,
                 standings: []
             };
         }
@@ -1257,7 +1241,6 @@ function renderStandings() {
     
     container.innerHTML = Object.values(grouped).map(group => {
         const sorted = group.standings.sort((a, b) => {
-            if (a.group_rank && b.group_rank) return a.group_rank - b.group_rank;
             if (a.points !== b.points) return b.points - a.points;
             return b.games_won - a.games_won;
         });
@@ -1265,7 +1248,7 @@ function renderStandings() {
         return `
             <div class="standings-table" style="margin-bottom: 2rem;">
                 <h3 style="padding: 1rem; background: var(--bg-color); border-bottom: 2px solid var(--border-color);">
-                    ${group.category} - Grupo ${group.group}
+                    ${group.category}
                 </h3>
                 <table>
                     <thead>
@@ -1284,8 +1267,8 @@ function renderStandings() {
                         ${sorted.map((s, index) => `
                             <tr>
                                 <td>
-                                    <span class="rank-badge ${s.group_rank === 1 ? 'rank-1' : s.group_rank === 2 ? 'rank-2' : s.group_rank === 3 ? 'rank-3' : ''}">
-                                        ${s.group_rank || index + 1}
+                                    <span class="rank-badge ${index === 0 ? 'rank-1' : index === 1 ? 'rank-2' : index === 2 ? 'rank-3' : ''}">
+                                        ${index + 1}
                                     </span>
                                 </td>
                                 <td><strong>${s.team_name}</strong></td>

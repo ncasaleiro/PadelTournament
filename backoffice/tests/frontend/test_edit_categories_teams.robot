@@ -60,7 +60,6 @@ Test Edit Team Name Via API
     ${body}=    Create Dictionary
     ...    name=EditedTeamName
     ...    category_id=${CATEGORY_ID}
-    ...    group_name=A
     ${response}=    PUT On Session    ${SESSION_NAME}    ${API_BASE}/teams/${TEAM_ID}    json=${body}    headers=${headers}
     Status Should Be    200
     Should Be Equal    ${response.json()['name']}    EditedTeamName
@@ -68,39 +67,20 @@ Test Edit Team Name Via API
     ${get_response}=    GET On Session    ${SESSION_NAME}    ${API_BASE}/teams/${TEAM_ID}
     Should Be Equal    ${get_response.json()['name']}    EditedTeamName
 
-Test Edit Team Group Via API
-    [Documentation]    Verify team group can be edited via API
-    [Tags]    team    edit    api    frontend
-    [Setup]    Create Test Team
-    ${headers}=    Create Dictionary    Content-Type=application/json    Authorization=Bearer ${TOKEN}
-    ${body}=    Create Dictionary
-    ...    name=TestTeam
-    ...    category_id=${CATEGORY_ID}
-    ...    group_name=B
-    ${response}=    PUT On Session    ${SESSION_NAME}    ${API_BASE}/teams/${TEAM_ID}    json=${body}    headers=${headers}
-    Status Should Be    200
-    Should Be Equal    ${response.json()['group_name']}    B
-    # Verify change persisted
-    ${get_response}=    GET On Session    ${SESSION_NAME}    ${API_BASE}/teams/${TEAM_ID}
-    Should Be Equal    ${get_response.json()['group_name']}    B
-
-Test Edit Team Name And Group Together
-    [Documentation]    Verify team name and group can be edited together
+Test Edit Team Name And Category Together
+    [Documentation]    Verify team name and category can be edited together
     [Tags]    team    edit    api    frontend
     [Setup]    Create Test Team
     ${headers}=    Create Dictionary    Content-Type=application/json    Authorization=Bearer ${TOKEN}
     ${body}=    Create Dictionary
     ...    name=NewTeamName
     ...    category_id=${CATEGORY_ID}
-    ...    group_name=B
     ${response}=    PUT On Session    ${SESSION_NAME}    ${API_BASE}/teams/${TEAM_ID}    json=${body}    headers=${headers}
     Status Should Be    200
     Should Be Equal    ${response.json()['name']}    NewTeamName
-    Should Be Equal    ${response.json()['group_name']}    B
     # Verify both changes persisted
     ${get_response}=    GET On Session    ${SESSION_NAME}    ${API_BASE}/teams/${TEAM_ID}
     Should Be Equal    ${get_response.json()['name']}    NewTeamName
-    Should Be Equal    ${get_response.json()['group_name']}    B
 
 Test Edit Team Multiple Times
     [Documentation]    Verify team can be edited multiple times
@@ -111,22 +91,19 @@ Test Edit Team Multiple Times
     ${body1}=    Create Dictionary
     ...    name=FirstTeamEdit
     ...    category_id=${CATEGORY_ID}
-    ...    group_name=A
     ${response1}=    PUT On Session    ${SESSION_NAME}    ${API_BASE}/teams/${TEAM_ID}    json=${body1}    headers=${headers}
     Status Should Be    200
     Should Be Equal    ${response1.json()['name']}    FirstTeamEdit
-    # Second edit - change group
+    # Second edit - change name again
     ${body2}=    Create Dictionary
-    ...    name=FirstTeamEdit
+    ...    name=SecondTeamEdit
     ...    category_id=${CATEGORY_ID}
-    ...    group_name=B
     ${response2}=    PUT On Session    ${SESSION_NAME}    ${API_BASE}/teams/${TEAM_ID}    json=${body2}    headers=${headers}
     Status Should Be    200
-    Should Be Equal    ${response2.json()['group_name']}    B
+    Should Be Equal    ${response2.json()['name']}    SecondTeamEdit
     # Verify final state
     ${get_response}=    GET On Session    ${SESSION_NAME}    ${API_BASE}/teams/${TEAM_ID}
-    Should Be Equal    ${get_response.json()['name']}    FirstTeamEdit
-    Should Be Equal    ${get_response.json()['group_name']}    B
+    Should Be Equal    ${get_response.json()['name']}    SecondTeamEdit
 
 Test Edit Category Requires Admin
     [Documentation]    Verify editing category requires admin authentication
@@ -146,7 +123,6 @@ Test Edit Team Requires Admin
     ${body}=    Create Dictionary
     ...    name=ShouldFail
     ...    category_id=${CATEGORY_ID}
-    ...    group_name=A
     ${response}=    PUT On Session    ${SESSION_NAME}    ${API_BASE}/teams/${TEAM_ID}    json=${body}    headers=${headers}    expected_status=403
     Status Should Be    403
     Should Contain    ${response.json()['error']}    Admin access required
@@ -176,7 +152,6 @@ Create Test Team
     ${body}=    Create Dictionary
     ...    name=TestTeamForEdit
     ...    category_id=${CATEGORY_ID}
-    ...    group_name=A
     ${response}=    POST On Session    ${SESSION_NAME}    ${API_BASE}/teams    json=${body}    headers=${headers}
     Set Suite Variable    ${TEAM_ID}    ${response.json()['team_id']}
 

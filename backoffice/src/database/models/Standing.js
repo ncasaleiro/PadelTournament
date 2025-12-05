@@ -104,6 +104,27 @@ class Standing {
     return this.getByTeam(teamId);
   }
 
+  static recalculateRankings(categoryId) {
+    const standings = this.getByCategory(categoryId);
+    
+    // Sort by points, games won, wins
+    standings.sort((a, b) => {
+      if (a.points !== b.points) return b.points - a.points;
+      if (a.games_won !== b.games_won) return b.games_won - a.games_won;
+      return b.wins - a.wins;
+    });
+    
+    // Update ranks (using null for groupName since groups are removed)
+    standings.forEach((standing, index) => {
+      this.createOrUpdate(standing.team_id, categoryId, null, {
+        ...standing,
+        group_rank: index + 1
+      });
+    });
+    
+    return this.getByCategory(categoryId);
+  }
+
   static recalculateGroupRankings(categoryId, groupName) {
     const standings = this.getByGroup(categoryId, groupName);
     

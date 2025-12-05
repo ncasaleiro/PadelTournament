@@ -51,7 +51,7 @@ class Team {
       });
   }
 
-  static create(name, categoryId, groupName) {
+  static create(name, categoryId) {
     const data = db.load();
     const newId = data.teams.length > 0 
       ? Math.max(...data.teams.map(t => t.team_id)) + 1 
@@ -61,7 +61,6 @@ class Team {
       team_id: newId,
       name,
       category_id: parseInt(categoryId),
-      group_name: groupName,
       created_at: new Date().toISOString()
     };
     
@@ -70,7 +69,7 @@ class Team {
     return this.getById(newId);
   }
 
-  static update(id, name, categoryId, groupName) {
+  static update(id, name, categoryId) {
     const data = db.load();
     const index = data.teams.findIndex(t => t.team_id === parseInt(id));
     if (index === -1) return null;
@@ -78,8 +77,7 @@ class Team {
     data.teams[index] = {
       ...data.teams[index],
       name,
-      category_id: parseInt(categoryId),
-      group_name: groupName
+      category_id: parseInt(categoryId)
     };
     
     db.save(data);

@@ -68,7 +68,6 @@ class Match {
       team2_id: parseInt(matchData.team2_id),
       category_id: parseInt(matchData.category_id),
       phase: matchData.phase || 'Group',
-      group_name: matchData.group_name || null,
       scheduled_date: matchData.scheduled_date || null,
       scheduled_time: matchData.scheduled_time || null,
       court: matchData.court || null,
@@ -100,7 +99,7 @@ class Match {
     
     // Update allowed fields
     const allowedFields = [
-      'team1_id', 'team2_id', 'category_id', 'phase', 'group_name',
+      'team1_id', 'team2_id', 'category_id', 'phase',
       'scheduled_date', 'scheduled_time', 'court', 'status',
       'sets_data', 'current_set_index', 'current_set_data', 'current_game_data',
       'winner_team_id', 'referee_notes', 'events_data', 'score_history',

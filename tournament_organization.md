@@ -10,7 +10,7 @@ The tournament is divided into **X independent categories**, such as:
 * F4
 * F5
 * Mixed (MX)
-
+Use the categories previous inserted.
 Each category operates as its own mini‑tournament with:
 
 * Group Stage
@@ -22,6 +22,7 @@ Each category operates as its own mini‑tournament with:
 ## 2. Group Stage (Round Robin)
 
 Each category is divided into groups of **3 or 4 teams**, normally 4.
+After all teams defined the admin can select teams as top teams and for each group only can be 2 top teams. (Note admin only can choose max 2x number of groups)
 
 ### Group Composition Example:
 
@@ -34,13 +35,14 @@ Each category is divided into groups of **3 or 4 teams**, normally 4.
 
 Each team plays against all others (round robin).
 Groups of 4 produce **6 matches**.
+Admin can choose 3rd set or super tie-break.
 
 ### Points System:
 
 * **Win: 3 points**
 * **Loss: 1 point** (updated rule)
 
-### Tiebreak Criteria:
+### Tiebreak Criteria under groups:
 
 1. Total points
 2. Head‑to‑head
@@ -131,7 +133,7 @@ match = {
   score: {
     set1: [6,4],
     set2: [5,7],
-    tiebreak: [10,7]
+    tiebreak: [10,7] or set3:[6,4]
   },
   status: "pending" | "in_progress" | "finished"
 }

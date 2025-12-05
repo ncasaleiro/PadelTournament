@@ -118,12 +118,10 @@ app.delete('/api/categories/:id', (req, res) => {
 // ==================== TEAMS API ====================
 app.get('/api/teams', (req, res) => {
   try {
-    const { category_id, group } = req.query;
+    const { category_id } = req.query;
     let teams;
     
-    if (category_id && group) {
-      teams = Team.getByGroup(category_id, group);
-    } else if (category_id) {
+    if (category_id) {
       teams = Team.getByCategory(category_id);
     } else {
       teams = Team.getAll();
@@ -149,11 +147,11 @@ app.get('/api/teams/:id', (req, res) => {
 
 app.post('/api/teams', authenticateToken, requireAdmin, (req, res) => {
   try {
-    const { name, category_id, group_name } = req.body;
-    if (!name || !category_id || !group_name) {
-      return res.status(400).json({ error: 'Name, category_id, and group_name are required' });
+    const { name, category_id } = req.body;
+    if (!name || !category_id) {
+      return res.status(400).json({ error: 'Name and category_id are required' });
     }
-    const team = Team.create(name, category_id, group_name);
+    const team = Team.create(name, category_id);
     res.status(201).json(team);
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -162,11 +160,11 @@ app.post('/api/teams', authenticateToken, requireAdmin, (req, res) => {
 
 app.put('/api/teams/:id', authenticateToken, requireAdmin, (req, res) => {
   try {
-    const { name, category_id, group_name } = req.body;
-    if (!name || !category_id || !group_name) {
-      return res.status(400).json({ error: 'Name, category_id, and group_name are required' });
+    const { name, category_id } = req.body;
+    if (!name || !category_id) {
+      return res.status(400).json({ error: 'Name and category_id are required' });
     }
-    const team = Team.update(req.params.id, name, category_id, group_name);
+    const team = Team.update(req.params.id, name, category_id);
     if (!team) {
       return res.status(404).json({ error: 'Team not found' });
     }
@@ -476,12 +474,10 @@ app.post('/api/matches/:id/finish', (req, res) => {
 // ==================== STANDINGS API ====================
 app.get('/api/standings', (req, res) => {
   try {
-    const { category_id, group } = req.query;
+    const { category_id } = req.query;
     let standings;
     
-    if (category_id && group) {
-      standings = Standing.getByGroup(category_id, group);
-    } else if (category_id) {
+    if (category_id) {
       standings = Standing.getByCategory(category_id);
     } else {
       standings = Standing.getAll();
@@ -493,10 +489,10 @@ app.get('/api/standings', (req, res) => {
   }
 });
 
-app.post('/api/standings/recalculate/:categoryId/:group', (req, res) => {
+app.post('/api/standings/recalculate/:categoryId', (req, res) => {
   try {
-    Standing.recalculateGroupRankings(req.params.categoryId, req.params.group);
-    const standings = Standing.getByGroup(req.params.categoryId, req.params.group);
+    Standing.recalculateRankings(req.params.categoryId);
+    const standings = Standing.getByCategory(req.params.categoryId);
     res.json(standings);
   } catch (error) {
     res.status(500).json({ error: error.message });

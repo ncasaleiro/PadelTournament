@@ -158,7 +158,6 @@ Create Test Team
     ${body}=    Create Dictionary
     ...    name=TestTeam
     ...    category_id=${CATEGORY_ID}
-    ...    group_name=A
     ${response}=    POST On Session    ${SESSION_NAME}    ${API_BASE}/teams    json=${body}    headers=${headers}
     Set Suite Variable    ${TEAM_ID}    ${response.json()['team_id']}
 

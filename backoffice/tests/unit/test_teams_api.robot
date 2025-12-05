@@ -35,7 +35,6 @@ Test Create Team
     ${body}=    Create Dictionary
     ...    name=TestTeam
     ...    category_id=${CATEGORY_ID}
-    ...    group_name=A
     ${response}=    POST On Session    ${SESSION_NAME}    ${API_BASE}/teams    json=${body}    headers=${headers}
     Status Should Be    201
     Should Contain    ${response.json()}    team_id
@@ -43,7 +42,6 @@ Test Create Team
     Set Suite Variable    ${TEAM1_ID}    ${response.json()['team_id']}
     Should Be Equal    ${response.json()['name']}    TestTeam
     Should Be Equal    ${response.json()['category_id']}    ${CATEGORY_ID}
-    Should Be Equal    ${response.json()['group_name']}    A
 
 Test Create Team Without Required Fields
     [Documentation]    Should return 400 when creating team without required fields
@@ -83,37 +81,22 @@ Test Filter Teams By Category
         Should Be Equal    ${team['category_id']}    ${CATEGORY_ID}
     END
 
-Test Filter Teams By Category And Group
-    [Documentation]    Should filter teams by category and group
-    [Tags]    team    filter
-    [Setup]    Create Test Team
-    ${params}=    Create Dictionary    category_id=${CATEGORY_ID}    group=A
-    ${response}=    GET On Session    ${SESSION_NAME}    ${API_BASE}/teams    params=${params}
-    Status Should Be    200
-    Should Be True    len(${response.json()}) > 0
-    FOR    ${team}    IN    @{response.json()}
-        Should Be Equal    ${team['category_id']}    ${CATEGORY_ID}
-        Should Be Equal    ${team['group_name']}    A
-    END
 
 Test Update Team
-    [Documentation]    Should update team name and group
+    [Documentation]    Should update team name
     [Tags]    team    update    edit
     [Setup]    Create Test Team
     ${headers}=    Create Dictionary    Content-Type=application/json    Authorization=Bearer ${ADMIN_TOKEN}
     ${body}=    Create Dictionary
     ...    name=UpdatedTeamName
     ...    category_id=${CATEGORY_ID}
-    ...    group_name=B
     ${response}=    PUT On Session    ${SESSION_NAME}    ${API_BASE}/teams/${TEAM1_ID}    json=${body}    headers=${headers}
     Status Should Be    200
     Should Be Equal    ${response.json()['name']}    UpdatedTeamName
-    Should Be Equal    ${response.json()['group_name']}    B
     Should Be Equal    ${response.json()['team_id']}    ${TEAM1_ID}
     # Verify update persisted
     ${get_response}=    GET On Session    ${SESSION_NAME}    ${API_BASE}/teams/${TEAM1_ID}
     Should Be Equal    ${get_response.json()['name']}    UpdatedTeamName
-    Should Be Equal    ${get_response.json()['group_name']}    B
 
 Test Update Team Without Required Fields
     [Documentation]    Should return 400 when updating team without required fields
@@ -130,7 +113,7 @@ Test Update Non-Existent Team
     [Tags]    team    update    error
     [Setup]    Create Test Category
     ${headers}=    Create Dictionary    Content-Type=application/json    Authorization=Bearer ${ADMIN_TOKEN}
-    ${body}=    Create Dictionary    name=UpdatedTeam    category_id=${CATEGORY_ID}    group_name=A
+    ${body}=    Create Dictionary    name=UpdatedTeam    category_id=${CATEGORY_ID}
     ${response}=    PUT On Session    ${SESSION_NAME}    ${API_BASE}/teams/99999    json=${body}    headers=${headers}    expected_status=404
     Status Should Be    404
 
@@ -176,7 +159,6 @@ Create Test Team
     ${body}=    Create Dictionary
     ...    name=TestTeam
     ...    category_id=${CATEGORY_ID}
-    ...    group_name=A
     ${response}=    POST On Session    ${SESSION_NAME}    ${API_BASE}/teams    json=${body}    headers=${headers}
     Set Suite Variable    ${TEAM1_ID}    ${response.json()['team_id']}
 
