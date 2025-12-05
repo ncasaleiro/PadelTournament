@@ -154,3 +154,12 @@ match = {
 7. Champion crowned
 
 ---
+
+
+
+
+## 8. Number of courts and date for the begin and the end must be previous given
+
+For default the games for lower categorys began earlly. For examples must began with F5 M5 F4 M4 MX and last will be M3
+
+---
