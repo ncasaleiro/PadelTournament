@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Live - Jogos em Curso</title>
+    <link rel="stylesheet" href="styles.css">
+    <style>
+        .live-page {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 1rem;
+        }
+
+        .live-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 2rem;
+            border-radius: 0.5rem;
+            margin-bottom: 2rem;
+            text-align: center;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        .live-header h1 {
+            margin: 0;
+            font-size: 2.5rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 1rem;
+        }
+
+        .live-indicator {
+            display: inline-block;
+            width: 12px;
+            height: 12px;
+            background: #ff4444;
+            border-radius: 50%;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        .live-stats {
+            display: flex;
+            justify-content: center;
+            gap: 2rem;
+            margin-top: 1rem;
+            font-size: 1.1rem;
+        }
+
+        .live-stats span {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .matches-grid {
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+            flex-wrap: wrap;
+        }
+
+        @media (max-width: 768px) {
+            .matches-grid {
+                flex-direction: column;
+                align-items: center;
+            }
+        }
+
+        .live-match-card {
+            background: white;
+            border-radius: 0.5rem;
+            padding: 1.5rem;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            border-left: 4px solid #ff9800;
+            transition: transform 0.2s, box-shadow 0.2s;
+            width: 100%;
+            max-width: 500px;
+        }
+
+        .live-match-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+        }
+
+        .match-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 1rem;
+        }
+
+        .match-title {
+            font-size: 1.25rem;
+            font-weight: 700;
+            color: #333;
+        }
+
+        .match-category {
+            background: #667eea;
+            color: white;
+            padding: 0.25rem 0.75rem;
+            border-radius: 9999px;
+            font-size: 0.875rem;
+            font-weight: 600;
+        }
+
+        .match-meta {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.75rem;
+            margin-bottom: 1rem;
+            font-size: 0.875rem;
+            color: #666;
+        }
+
+        .match-meta span {
+            display: flex;
+            align-items: center;
+            gap: 0.25rem;
+        }
+
+        .scoreboard {
+            background: #f8f9fa;
+            border-radius: 0.5rem;
+            padding: 1rem;
+            margin-bottom: 1rem;
+        }
+
+        .scoreboard-header {
+            display: grid;
+            grid-template-columns: 2fr 1fr 1fr 1fr 1.5fr;
+            gap: 0.5rem;
+            padding: 0.75rem;
+            background: white;
+            border-radius: 0.375rem;
+            margin-bottom: 0.5rem;
+            font-weight: 600;
+            font-size: 0.875rem;
+            color: #666;
+        }
+
+        .scoreboard-row {
+            display: grid;
+            grid-template-columns: 2fr 1fr 1fr 1fr 1.5fr;
+            gap: 0.5rem;
+            padding: 0.75rem;
+            background: white;
+            border-radius: 0.375rem;
+            margin-bottom: 0.25rem;
+        }
+
+        .team-name {
+            font-weight: 600;
+            color: #333;
+        }
+
+        .set-score {
+            text-align: center;
+            font-size: 1.25rem;
+            font-weight: 700;
+            color: #333;
+        }
+
+        .game-score {
+            text-align: center;
+            font-size: 1.125rem;
+            font-weight: 600;
+            color: #667eea;
+        }
+
+        .match-actions {
+            display: flex;
+            gap: 0.5rem;
+            flex-wrap: wrap;
+        }
+
+        .btn-view {
+            background: #667eea;
+            color: white;
+            border: none;
+            padding: 0.5rem 1rem;
+            border-radius: 0.375rem;
+            font-weight: 600;
+            cursor: pointer;
+            text-decoration: none;
+            display: inline-block;
+            transition: background 0.2s;
+        }
+
+        .btn-view:hover {
+            background: #5568d3;
+        }
+
+        .no-matches {
+            text-align: center;
+            padding: 3rem;
+            background: white;
+            border-radius: 0.5rem;
+            color: #666;
+        }
+
+        .no-matches-icon {
+            font-size: 4rem;
+            margin-bottom: 1rem;
+        }
+
+        .back-link {
+            display: inline-block;
+            margin-bottom: 1rem;
+            color: #667eea;
+            text-decoration: none;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .back-link:hover {
+            text-decoration: underline;
+        }
+
+        .refresh-info {
+            text-align: center;
+            color: #666;
+            font-size: 0.875rem;
+            margin-top: 1rem;
+        }
+
+        @keyframes spin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+
+        #refresh-status {
+            display: inline-block;
+            font-weight: bold;
+        }
+
+        @keyframes spin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+
+        #refresh-status {
+            display: inline-block;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <div class="live-page">
+        <a href="index.html" class="back-link">← Voltar</a>
+        
+        <div class="live-header">
+            <h1>
+                <span class="live-indicator"></span>
+                Jogos em Curso
+            </h1>
+            <div class="live-stats">
+                <span id="live-count">0 jogos</span>
+                <span>🔄 Atualização automática a cada 1 segundo</span>
+            </div>
+        </div>
+
+        <div id="matches-container" class="matches-grid">
+            <div class="no-matches">
+                <div class="no-matches-icon">⏳</div>
+                <p>A carregar jogos...</p>
+            </div>
+        </div>
+
+        <div class="refresh-info">
+            Última atualização: <span id="last-update">-</span>
+            <span id="refresh-status" style="margin-left: 1rem;"></span>
+        </div>
+    </div>
+
+    <script src="live.js"></script>
+</body>
+</html>

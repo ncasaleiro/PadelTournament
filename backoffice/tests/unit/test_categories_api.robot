@@ -4,7 +4,7 @@ Library          RequestsLibrary
 Library          Collections
 Library          String
 
-Suite Setup       Create Session For API
+Suite Setup       Create Session And Login As Admin
 Suite Teardown    Cleanup Test Data
 Test Teardown     Run Keywords    Cleanup Test Categories
 
@@ -13,6 +13,9 @@ ${BASE_URL}          http://localhost:3000
 ${API_BASE}          ${BASE_URL}/api
 ${SESSION_NAME}      api_session
 ${CATEGORY_ID}       ${EMPTY}
+${ADMIN_TOKEN}       ${EMPTY}
+${ADMIN_USERNAME}    admin
+${ADMIN_PASSWORD}    admin123
 
 *** Test Cases ***
 Test Get All Categories
@@ -25,7 +28,7 @@ Test Get All Categories
 Test Create Category
     [Documentation]    Should create a new category
     [Tags]    category    create
-    ${headers}=    Create Dictionary    Content-Type=application/json
+    ${headers}=    Create Dictionary    Content-Type=application/json    Authorization=Bearer ${ADMIN_TOKEN}
     ${body}=    Create Dictionary    name=TestCategory
     ${response}=    POST On Session    ${SESSION_NAME}    ${API_BASE}/categories    json=${body}    headers=${headers}
     Status Should Be    201
@@ -37,7 +40,7 @@ Test Create Category
 Test Create Category Without Name
     [Documentation]    Should return 400 when creating category without name
     [Tags]    category    create    error
-    ${headers}=    Create Dictionary    Content-Type=application/json
+    ${headers}=    Create Dictionary    Content-Type=application/json    Authorization=Bearer ${ADMIN_TOKEN}
     ${body}=    Create Dictionary
     ${response}=    POST On Session    ${SESSION_NAME}    ${API_BASE}/categories    json=${body}    headers=${headers}    expected_status=400
     Status Should Be    400
@@ -63,7 +66,7 @@ Test Update Category
     [Documentation]    Should update category name
     [Tags]    category    update    edit
     [Setup]    Create Test Category
-    ${headers}=    Create Dictionary    Content-Type=application/json
+    ${headers}=    Create Dictionary    Content-Type=application/json    Authorization=Bearer ${ADMIN_TOKEN}
     ${body}=    Create Dictionary    name=UpdatedCategory
     ${response}=    PUT On Session    ${SESSION_NAME}    ${API_BASE}/categories/${CATEGORY_ID}    json=${body}    headers=${headers}
     Status Should Be    200
@@ -77,7 +80,7 @@ Test Update Category Without Name
     [Documentation]    Should return 400 when updating category without name
     [Tags]    category    update    error
     [Setup]    Create Test Category
-    ${headers}=    Create Dictionary    Content-Type=application/json
+    ${headers}=    Create Dictionary    Content-Type=application/json    Authorization=Bearer ${ADMIN_TOKEN}
     ${body}=    Create Dictionary
     ${response}=    PUT On Session    ${SESSION_NAME}    ${API_BASE}/categories/${CATEGORY_ID}    json=${body}    headers=${headers}    expected_status=400
     Status Should Be    400
@@ -86,7 +89,7 @@ Test Update Category Without Name
 Test Update Non-Existent Category
     [Documentation]    Should return 404 when updating non-existent category
     [Tags]    category    update    error
-    ${headers}=    Create Dictionary    Content-Type=application/json
+    ${headers}=    Create Dictionary    Content-Type=application/json    Authorization=Bearer ${ADMIN_TOKEN}
     ${body}=    Create Dictionary    name=UpdatedCategory
     ${response}=    PUT On Session    ${SESSION_NAME}    ${API_BASE}/categories/99999    json=${body}    headers=${headers}    expected_status=404
     Status Should Be    404
@@ -95,7 +98,8 @@ Test Delete Category
     [Documentation]    Should delete a category
     [Tags]    category    delete
     [Setup]    Create Test Category
-    ${response}=    DELETE On Session    ${SESSION_NAME}    ${API_BASE}/categories/${CATEGORY_ID}
+    ${headers}=    Create Dictionary    Authorization=Bearer ${ADMIN_TOKEN}
+    ${response}=    DELETE On Session    ${SESSION_NAME}    ${API_BASE}/categories/${CATEGORY_ID}    headers=${headers}
     Status Should Be    204
     # Verify deletion
     ${response}=    GET On Session    ${SESSION_NAME}    ${API_BASE}/categories/${CATEGORY_ID}    expected_status=404
@@ -108,20 +112,29 @@ Test Delete Non-Existent Category
     Status Should Be    404
 
 *** Keywords ***
-Create Session For API
-    [Documentation]    Create HTTP session for API calls
+Create Session And Login As Admin
+    [Documentation]    Create API session and login as admin
     Create Session    ${SESSION_NAME}    ${BASE_URL}
+    
+    # Login
+    ${login_data}=    Create Dictionary    username=${ADMIN_USERNAME}    password=${ADMIN_PASSWORD}
+    ${login_response}=    POST On Session    ${SESSION_NAME}    ${API_BASE}/auth/login    json=${login_data}
+    Should Be Equal As Strings    ${login_response.status_code}    200
+    
+    ${token}=    Set Variable    ${login_response.json()}[token]
+    Set Suite Variable    ${ADMIN_TOKEN}    ${token}
 
 Create Test Category
     [Documentation]    Create a test category
-    ${headers}=    Create Dictionary    Content-Type=application/json
+    ${headers}=    Create Dictionary    Content-Type=application/json    Authorization=Bearer ${ADMIN_TOKEN}
     ${body}=    Create Dictionary    name=TestCategory
     ${response}=    POST On Session    ${SESSION_NAME}    ${API_BASE}/categories    json=${body}    headers=${headers}
     Set Suite Variable    ${CATEGORY_ID}    ${response.json()['category_id']}
 
 Cleanup Test Categories
     [Documentation]    Clean up test categories created during tests
-    Run Keyword If    '${CATEGORY_ID}' != '${EMPTY}'    DELETE On Session    ${SESSION_NAME}    ${API_BASE}/categories/${CATEGORY_ID}    expected_status=any
+    ${headers}=    Create Dictionary    Authorization=Bearer ${ADMIN_TOKEN}
+    Run Keyword If    '${CATEGORY_ID}' != '${EMPTY}'    DELETE On Session    ${SESSION_NAME}    ${API_BASE}/categories/${CATEGORY_ID}    headers=${headers}    expected_status=any
     Set Suite Variable    ${CATEGORY_ID}    ${EMPTY}
 
 Cleanup Test Data
@@ -134,8 +147,9 @@ Cleanup Test Data
 Cleanup Test Categories From List
     [Documentation]    Clean up test categories from a list
     [Arguments]    ${categories}
+    ${headers}=    Create Dictionary    Authorization=Bearer ${ADMIN_TOKEN}
     FOR    ${category}    IN    @{categories}
         ${name}=    Get From Dictionary    ${category}    name
-        Run Keyword If    'TestCategory' in '${name}' or 'UpdatedCategory' in '${name}'    DELETE On Session    ${SESSION_NAME}    ${API_BASE}/categories/${category['category_id']}    expected_status=any
+        Run Keyword If    'TestCategory' in '${name}' or 'UpdatedCategory' in '${name}'    DELETE On Session    ${SESSION_NAME}    ${API_BASE}/categories/${category['category_id']}    headers=${headers}    expected_status=any
     END
 

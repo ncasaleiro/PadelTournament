@@ -1,4 +1,9 @@
 <!DOCTYPE html>
+<!--
+    Padel Tournament Manager - Backoffice
+    Version: v0.03-dev
+    Last Updated: 2025-12-06 10:47:50
+-->
 <html lang="pt">
 <head>
     <meta charset="UTF-8">
@@ -12,6 +17,10 @@
         <aside class="sidebar">
             <div class="sidebar-header">
                 <h1>🎾 Padel Manager</h1>
+                <div class="version-info" style="font-size: 0.7em; color: #888; margin-top: 5px; text-align: center;">
+                    v0.03-dev<br>
+                    <span style="font-size: 0.85em;">2025-12-06</span>
+                </div>
             </div>
             <nav class="sidebar-nav">
                 <a href="#" class="nav-item active" data-page="dashboard">
@@ -33,6 +42,14 @@
                 <a href="#" class="nav-item" data-page="standings">
                     <span class="icon">🏆</span>
                     <span>Classificações</span>
+                </a>
+                <a href="live.html" class="nav-item">
+                    <span class="icon">🔴</span>
+                    <span>Live</span>
+                </a>
+                <a href="#" class="nav-item" data-page="tournaments" id="nav-tournaments" style="display: none;">
+                    <span class="icon">📅</span>
+                    <span>Torneios</span>
                 </a>
                 <a href="#" class="nav-item" data-page="users" id="nav-users" style="display: none;">
                     <span class="icon">👤</span>
@@ -152,6 +169,24 @@
                 <div id="standings-list"></div>
             </div>
 
+            <!-- Viewer Page - Tournament Bracket and Standings -->
+            <div id="viewer-page" class="page">
+                <div class="page-header">
+                    <h2>Visualização do Torneio</h2>
+                </div>
+                <div class="viewer-controls" style="margin-bottom: 2rem;">
+                    <div class="form-group">
+                        <label>Selecionar Torneio</label>
+                        <select id="viewer-tournament-select" style="width: 100%; max-width: 400px; padding: 8px;" onchange="loadTournamentBracket()">
+                            <option value="">-- Selecionar Torneio --</option>
+                        </select>
+                    </div>
+                </div>
+                <div id="viewer-content">
+                    <div class="alert alert-info">Selecione um torneio para visualizar o bracket e classificações</div>
+                </div>
+            </div>
+
             <!-- Users Page -->
             <div id="users-page" class="page">
                 <div class="page-header">
@@ -159,6 +194,17 @@
                     <button class="btn btn-primary" onclick="openUserModal()" id="btn-new-user">+ Novo Utilizador</button>
                 </div>
                 <div id="users-list" class="items-grid"></div>
+            </div>
+
+            <!-- Tournaments Page - Updated: 2025-12-06 10:47:50 - v0.03-dev - Moved inside <main> to match other pages -->
+            <div id="tournaments-page" class="page">
+                <div class="page-header">
+                    <h2>Torneios</h2>
+                    <button class="btn btn-primary" id="btn-new-tournament" onclick="openTournamentModal()">+ Novo Torneio</button>
+                </div>
+                <div id="tournaments-list" class="items-grid">
+                    <p>A carregar torneios...</p>
+                </div>
             </div>
         </main>
     </div>
@@ -329,6 +375,192 @@
             <div id="match-statistics-content">
                 <div class="loading">A carregar estatísticas...</div>
             </div>
+        </div>
+    </div>
+
+    <!-- Tournament Modal -->
+    <div id="tournament-modal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeModal('tournament-modal')">&times;</span>
+            <h3 id="tournament-modal-title">Novo Torneio</h3>
+            <form id="tournament-form" onsubmit="saveTournament(event)">
+                <input type="hidden" id="tournament-id">
+                <div class="form-group">
+                    <label>Nome do Torneio</label>
+                    <input type="text" id="tournament-name" required>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Data de Início</label>
+                        <input type="date" id="tournament-start-date" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Data de Fim</label>
+                        <input type="date" id="tournament-end-date" required>
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Hora de Início</label>
+                        <input type="time" id="tournament-start-time" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Hora de Fim (início do último slot)</label>
+                        <input type="time" id="tournament-end-time" max="23:59" required>
+                        <small class="form-text text-muted">Ex: 23:00 permite slots até 24:00 (23:00-24:00)</small>
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Número de Courts</label>
+                        <input type="number" id="tournament-courts" min="1" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Duração do Jogo (minutos)</label>
+                        <input type="number" id="tournament-match-duration" min="30" required>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>Formato do Jogo</label>
+                    <select id="tournament-match-format" required>
+                        <option value="super_tiebreak">Super Tie-break (2 sets + super tie-break)</option>
+                        <option value="3_sets">3 Sets (melhor de 3)</option>
+                    </select>
+                    <small class="form-text text-muted">Escolha se os jogos serão disputados com super tie-break ou 3 sets completos</small>
+                </div>
+                <div class="form-group">
+                    <label>Fase Eliminatória</label>
+                    <select id="tournament-knockout-stage-type" required>
+                        <option value="quarter_final">Quartos-de-final (2 equipas por grupo passam - requer 4 grupos)</option>
+                        <option value="semi_final">Meias-finais (2 equipas por grupo passam - requer 2 grupos)</option>
+                    </select>
+                    <small class="form-text text-muted">Escolha se a fase eliminatória começa nos quartos-de-final (requer 4 grupos) ou diretamente nas meias-finais (requer 2 grupos). Em ambos os casos, passam 2 equipas por grupo (1º e 2º classificados).</small>
+                </div>
+                <!-- Updated: 2025-12-06 10:51:00 - v0.03-dev - Added category selection -->
+                <div class="form-group">
+                    <label>Categorias do Torneio <span style="color: red;">*</span></label>
+                    <div id="tournament-categories-container" style="max-height: 200px; overflow-y: auto; border: 1px solid #ddd; padding: 10px; border-radius: 4px; background: #f9f9f9;">
+                        <p style="color: #666; font-size: 0.9em;">A carregar categorias...</p>
+                    </div>
+                    <small class="form-text text-muted">Selecione pelo menos uma categoria para o torneio</small>
+                </div>
+                <div class="form-actions">
+                    <button type="button" class="btn btn-secondary" onclick="closeModal('tournament-modal')">Cancelar</button>
+                    <button type="submit" class="btn btn-primary">Guardar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Tournament Details Modal -->
+    <div id="tournament-details-modal" class="modal">
+        <div class="modal-content" style="max-width: 90%; max-height: 90vh;">
+            <div>
+                <span class="close" onclick="closeModal('tournament-details-modal')">&times;</span>
+                <h3 id="tournament-details-title">Detalhes do Torneio</h3>
+            </div>
+            <div id="tournament-details-content">
+                <div class="loading">A carregar...</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Generate Matches Modal -->
+    <div id="generate-matches-modal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeModal('generate-matches-modal')">&times;</span>
+            <h3>Gerar Jogos</h3>
+            <form id="generate-matches-form" onsubmit="generateTournamentMatches(event)">
+                <input type="hidden" id="generate-tournament-id">
+                <div class="form-group">
+                    <label>Categorias (pode selecionar múltiplas)</label>
+                    <div id="generate-categories-list" style="max-height: 200px; overflow-y: auto; border: 1px solid #ddd; padding: 10px; border-radius: 4px;"></div>
+                    <small class="form-text">Selecione uma ou mais categorias para gerar jogos</small>
+                </div>
+                <div class="form-group">
+                    <label>Fase</label>
+                    <select id="generate-phase" required>
+                        <option value="Group">Fase de Grupos</option>
+                        <option value="Quarter-final">Quartas-de-final</option>
+                        <option value="Semi-final">Semi-finais</option>
+                        <option value="Final">Final</option>
+                        <option value="Third-Fourth">3º/4º Lugar</option>
+                    </select>
+                </div>
+                <div class="form-group" id="teams-per-group-group" style="display: none;">
+                    <label>Equipas por Grupo</label>
+                    <input type="number" id="generate-teams-per-group" min="3" max="4" value="4">
+                    <small class="form-text text-muted">Este campo aparece apenas quando uma única categoria está selecionada.</small>
+                </div>
+                <div class="form-group" id="top-teams-section" style="display: none;">
+                    <label>Top Teams (máximo 2 por grupo)</label>
+                    <div id="top-teams-list"></div>
+                    <small class="form-text text-muted">Selecione as equipas top. As restantes serão distribuídas aleatoriamente.</small>
+                </div>
+                <div class="form-group" id="qualified-teams-section" style="display: none;">
+                    <label>Equipas Qualificadas</label>
+                    <div id="qualified-teams-list"></div>
+                    <small class="form-text text-muted">Selecione as equipas qualificadas para esta fase.</small>
+                </div>
+                <div class="form-group">
+                    <label>Formato do Jogo</label>
+                    <select id="generate-match-format">
+                        <option value="tournament_default">Usar formato do torneio</option>
+                        <option value="super_tiebreak">Super Tie-break (2 sets + super tie-break)</option>
+                        <option value="3_sets">3 Sets (melhor de 3)</option>
+                    </select>
+                    <small class="form-text text-muted">Escolha o formato para estes jogos (ou use o padrão do torneio)</small>
+                </div>
+                <div class="form-group" id="auto-qualify-section" style="display: none;">
+                    <label>
+                        <input type="checkbox" id="generate-auto-qualify" checked>
+                        Qualificar automaticamente com base nas classificações dos grupos
+                    </label>
+                    <small class="form-text">Os qualificados serão calculados automaticamente: 1º e 2º de cada grupo para quartas-de-final, etc.</small>
+                </div>
+                <div class="form-group" id="create-placeholders-section" style="display: none;">
+                    <label>
+                        <input type="checkbox" id="generate-create-placeholders">
+                        Criar slots reservados (sem equipas definidas)
+                    </label>
+                    <small class="form-text">Cria os jogos reservando apenas os slots no calendário, sem definir as equipas. Útil para reservar horários antes de saber quais equipas avançam.</small>
+                </div>
+                <div class="form-group">
+                    <label>
+                        <input type="checkbox" id="generate-auto-schedule" checked>
+                        Agendar automaticamente
+                    </label>
+                </div>
+                <div class="form-group" id="schedule-start-section">
+                    <label>Data de início para geração de jogos (opcional)</label>
+                    <input type="date" id="generate-start-date" class="form-control">
+                    <small class="form-text">Se especificado, os jogos começarão a ser agendados a partir desta data</small>
+                </div>
+                <div class="form-group" id="schedule-time-section">
+                    <label>Hora de início para geração de jogos (opcional)</label>
+                    <input type="time" id="generate-start-time" class="form-control">
+                    <small class="form-text">Se especificado, os jogos começarão a ser agendados a partir desta hora</small>
+                </div>
+                <div class="form-group" id="phase-schedule-section" style="display: none;">
+                    <label>Data de início da fase (opcional)</label>
+                    <input type="date" id="generate-phase-start-date" class="form-control">
+                    <small class="form-text">Se especificado, os jogos desta fase começarão nesta data (sobrescreve data geral)</small>
+                </div>
+                <div class="form-group" id="phase-time-section" style="display: none;">
+                    <label>Hora de início da fase (opcional)</label>
+                    <input type="time" id="generate-phase-start-time" class="form-control">
+                    <small class="form-text">Se especificado, os jogos desta fase começarão a esta hora (sobrescreve hora geral)</small>
+                </div>
+                <div class="form-group" id="day-time-overrides-section" style="display: none;">
+                    <label>Horários por dia do torneio</label>
+                    <div id="day-time-overrides-list"></div>
+                    <small class="form-text">Configure horários específicos para cada dia do torneio. Se não especificar, usa os horários padrão do torneio.</small>
+                </div>
+                <div class="form-actions">
+                    <button type="button" class="btn btn-secondary" onclick="closeModal('generate-matches-modal')">Cancelar</button>
+                    <button type="submit" class="btn btn-primary">Gerar Jogos</button>
+                </div>
+            </form>
         </div>
     </div>
 

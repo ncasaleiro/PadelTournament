@@ -3,58 +3,184 @@
     {
       "category_id": 1,
       "name": "M3",
-      "created_at": "2025-12-03T16:09:52.529Z"
-    },
-    {
-      "category_id": 2,
-      "name": "M4",
-      "created_at": "2025-12-03T16:09:52.533Z"
+      "created_at": "2025-12-09T15:30:30.381Z"
     },
     {
       "category_id": 3,
       "name": "M5",
-      "created_at": "2025-12-03T16:09:52.539Z"
+      "created_at": "2025-12-09T15:30:30.385Z"
     },
     {
       "category_id": 4,
       "name": "F4",
-      "created_at": "2025-12-03T16:09:52.544Z"
+      "created_at": "2025-12-09T15:30:30.386Z"
     },
     {
       "category_id": 5,
       "name": "F5",
-      "created_at": "2025-12-03T16:09:52.549Z"
+      "created_at": "2025-12-09T15:30:30.386Z"
     },
     {
       "category_id": 6,
       "name": "MX",
-      "created_at": "2025-12-03T16:09:52.555Z"
+      "created_at": "2025-12-09T15:30:30.386Z"
+    },
+    {
+      "category_id": 7,
+      "name": "M4",
+      "created_at": "2026-01-08T10:16:52.384Z"
     }
   ],
   "teams": [
     {
-      "team_id": 1,
-      "name": "Team M3 1",
-      "category_id": 1,
-      "created_at": "2025-12-05T00:03:33.903Z"
-    },
-    {
-      "team_id": 2,
-      "name": "Team M3 2",
-      "category_id": 1,
-      "created_at": "2025-12-05T00:03:46.635Z"
-    },
-    {
       "team_id": 3,
-      "name": "Team M3 3",
-      "category_id": 1,
-      "created_at": "2025-12-05T00:03:58.730Z"
+      "name": "Equipa M5 C",
+      "category_id": 3,
+      "created_at": "2025-12-09T15:30:30.386Z"
     },
     {
       "team_id": 4,
-      "name": "Team M3 4",
+      "name": "Equipa M5 D",
+      "category_id": 3,
+      "created_at": "2025-12-09T15:30:30.387Z"
+    },
+    {
+      "team_id": 5,
+      "name": "Equipa M5 E",
+      "category_id": 3,
+      "created_at": "2025-12-09T15:30:30.387Z"
+    },
+    {
+      "team_id": 6,
+      "name": "Equipa M5 F",
+      "category_id": 3,
+      "created_at": "2025-12-09T15:30:30.387Z"
+    },
+    {
+      "team_id": 12,
+      "name": "Equipa M4 D",
+      "category_id": 2,
+      "created_at": "2025-12-09T15:30:30.388Z"
+    },
+    {
+      "team_id": 13,
+      "name": "Equipa M4 E",
+      "category_id": 2,
+      "created_at": "2025-12-09T15:30:30.388Z"
+    },
+    {
+      "team_id": 14,
+      "name": "Equipa M4 F",
+      "category_id": 2,
+      "created_at": "2025-12-09T15:30:30.388Z"
+    },
+    {
+      "team_id": 19,
+      "name": "Equipa F4 C",
+      "category_id": 4,
+      "created_at": "2025-12-09T15:30:30.389Z"
+    },
+    {
+      "team_id": 20,
+      "name": "Equipa F4 D",
+      "category_id": 4,
+      "created_at": "2025-12-09T15:30:30.391Z"
+    },
+    {
+      "team_id": 21,
+      "name": "Equipa F4 E",
+      "category_id": 4,
+      "created_at": "2025-12-09T15:30:30.391Z"
+    },
+    {
+      "team_id": 22,
+      "name": "Equipa F4 F",
+      "category_id": 4,
+      "created_at": "2025-12-09T15:30:30.392Z"
+    },
+    {
+      "team_id": 25,
+      "name": "Equipa F5 C",
+      "category_id": 5,
+      "created_at": "2025-12-09T15:30:30.392Z"
+    },
+    {
+      "team_id": 26,
+      "name": "Equipa F5 D",
+      "category_id": 5,
+      "created_at": "2025-12-09T15:30:30.393Z"
+    },
+    {
+      "team_id": 27,
+      "name": "Equipa F5 E",
+      "category_id": 5,
+      "created_at": "2025-12-09T15:30:30.393Z"
+    },
+    {
+      "team_id": 28,
+      "name": "Equipa F5 F",
+      "category_id": 5,
+      "created_at": "2025-12-09T15:30:30.393Z"
+    },
+    {
+      "team_id": 31,
+      "name": "Equipa MX C",
+      "category_id": 6,
+      "created_at": "2025-12-09T15:30:30.394Z"
+    },
+    {
+      "team_id": 32,
+      "name": "Equipa MX D",
+      "category_id": 6,
+      "created_at": "2025-12-09T15:30:30.394Z"
+    },
+    {
+      "team_id": 33,
+      "name": "Equipa MX E",
+      "category_id": 6,
+      "created_at": "2025-12-09T15:30:30.395Z"
+    },
+    {
+      "team_id": 34,
+      "name": "Equipa MX F",
+      "category_id": 6,
+      "created_at": "2025-12-09T15:30:30.395Z"
+    },
+    {
+      "team_id": 37,
+      "name": "Equipa M3 C",
       "category_id": 1,
-      "created_at": "2025-12-05T00:04:06.348Z"
+      "created_at": "2025-12-09T23:27:04.155Z"
+    },
+    {
+      "team_id": 38,
+      "name": "Equipa M3 D",
+      "category_id": 1,
+      "created_at": "2025-12-09T23:27:04.156Z"
+    },
+    {
+      "team_id": 39,
+      "name": "Equipa M3 E",
+      "category_id": 1,
+      "created_at": "2025-12-09T23:27:04.156Z"
+    },
+    {
+      "team_id": 40,
+      "name": "Equipa M3 F",
+      "category_id": 1,
+      "created_at": "2025-12-09T23:27:04.156Z"
+    },
+    {
+      "team_id": 43,
+      "name": "Test Team Live 3",
+      "category_id": 9,
+      "created_at": "2026-01-13T16:58:57.699Z"
+    },
+    {
+      "team_id": 44,
+      "name": "Test Team Live 4",
+      "category_id": 9,
+      "created_at": "2026-01-13T16:58:57.701Z"
     }
   ],
   "players": [],
@@ -74,6 +200,14 @@
       "password_hash": "13168cb6ab81904749ec1ced6721993f98c87e638f0a3430c12ce26b6ab70ce5",
       "role": "referee",
       "created_at": "2025-12-03T18:41:33.194Z"
+    },
+    {
+      "user_id": 3,
+      "username": "viewer",
+      "password_hash": "65375049b9e4d7cad6c9ba286fdeb9394b28135a3e84136404cfccfdcc438894",
+      "role": "viewer",
+      "created_at": "2025-12-16T13:08:53.951Z"
     }
-  ]
+  ],
+  "tournaments": []
 }

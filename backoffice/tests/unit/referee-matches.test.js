@@ -43,18 +43,10 @@ describe('Referee Matches Access', () => {
         const category = Category.create('Test Category');
         testCategoryId = category.category_id;
 
-        const team1 = Team.create({
-            name: 'Test Team 1',
-            category_id: testCategoryId,
-            group_name: 'A'
-        });
+        const team1 = Team.create('Test Team 1', testCategoryId);
         testTeam1Id = team1.team_id;
 
-        const team2 = Team.create({
-            name: 'Test Team 2',
-            category_id: testCategoryId,
-            group_name: 'A'
-        });
+        const team2 = Team.create('Test Team 2', testCategoryId);
         testTeam2Id = team2.team_id;
 
         const match = Match.create({

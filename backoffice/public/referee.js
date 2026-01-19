@@ -9,11 +9,31 @@ let currentMatch = null;
 let events = [];
 let autoRefreshInterval = null;
 
+// Helper function to make authenticated API calls
+function apiCall(url, options = {}) {
+    const token = localStorage.getItem('token');
+    const headers = {
+        'Content-Type': 'application/json',
+        ...options.headers
+    };
+    
+    if (token) {
+        headers['Authorization'] = `Bearer ${token}`;
+    }
+    
+    return fetch(url, {
+        ...options,
+        headers
+    });
+}
+
 // Initialize
 document.addEventListener('DOMContentLoaded', () => {
     // Check authentication
     const savedUser = localStorage.getItem('currentUser');
-    if (!savedUser) {
+    const token = localStorage.getItem('token');
+    
+    if (!savedUser || !token) {
         alert('Precisa de fazer login');
         window.location.href = 'index.html';
         return;
@@ -45,8 +65,11 @@ document.addEventListener('DOMContentLoaded', () => {
 // Load match data
 async function loadMatch() {
     try {
-        const response = await fetch(`${API_BASE}/matches/${matchId}`);
+        const response = await apiCall(`${API_BASE}/matches/${matchId}`);
         if (!response.ok) {
+            if (response.status === 403) {
+                throw new Error('Não tem permissão para aceder a este jogo');
+            }
             throw new Error('Jogo não encontrado');
         }
         
@@ -175,11 +198,8 @@ async function recordPoint(team) {
     }
     
     try {
-        const response = await fetch(`${API_BASE}/matches/${matchId}/score/increment`, {
+        const response = await apiCall(`${API_BASE}/matches/${matchId}/score/increment`, {
             method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
             body: JSON.stringify({ team }),
         });
         
@@ -190,6 +210,9 @@ async function recordPoint(team) {
                 errorMessage = error.error || errorMessage;
             } catch (e) {
                 errorMessage = response.statusText || errorMessage;
+            }
+            if (response.status === 403) {
+                errorMessage = 'Não tem permissão para marcar pontos. Verifique se está autenticado como árbitro.';
             }
             throw new Error(errorMessage);
         }
@@ -287,11 +310,8 @@ async function undoLastAction() {
     const team = 'A';
     
     try {
-        const response = await fetch(`${API_BASE}/matches/${matchId}/score/decrement`, {
+        const response = await apiCall(`${API_BASE}/matches/${matchId}/score/decrement`, {
             method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
             body: JSON.stringify({ team }),
         });
         
@@ -302,6 +322,9 @@ async function undoLastAction() {
                 errorMessage = error.error || errorMessage;
             } catch (e) {
                 errorMessage = response.statusText || errorMessage;
+            }
+            if (response.status === 403) {
+                errorMessage = 'Não tem permissão para desfazer ações. Verifique se está autenticado como árbitro.';
             }
             throw new Error(errorMessage);
         }
@@ -395,11 +418,8 @@ function loadEvents() {
 // Save events to match
 async function saveEvents() {
     try {
-        await fetch(`${API_BASE}/matches/${matchId}`, {
+        await apiCall(`${API_BASE}/matches/${matchId}`, {
             method: 'PUT',
-            headers: {
-                'Content-Type': 'application/json',
-            },
             body: JSON.stringify({
                 events_data: JSON.stringify(events)
             }),
@@ -414,11 +434,8 @@ async function saveNotes() {
     const notes = document.getElementById('referee-notes').value;
     
     try {
-        await fetch(`${API_BASE}/matches/${matchId}`, {
+        await apiCall(`${API_BASE}/matches/${matchId}`, {
             method: 'PUT',
-            headers: {
-                'Content-Type': 'application/json',
-            },
             body: JSON.stringify({
                 referee_notes: notes
             }),
@@ -431,12 +448,16 @@ async function saveNotes() {
 // Start match
 async function startMatch() {
     try {
-        const response = await fetch(`${API_BASE}/matches/${matchId}/start`, {
+        const response = await apiCall(`${API_BASE}/matches/${matchId}/start`, {
             method: 'POST',
         });
         
         if (!response.ok) {
-            throw new Error('Erro ao iniciar jogo');
+            let errorMessage = 'Erro ao iniciar jogo';
+            if (response.status === 403) {
+                errorMessage = 'Não tem permissão para iniciar jogos. Verifique se está autenticado como árbitro.';
+            }
+            throw new Error(errorMessage);
         }
         
         // Add start event
@@ -457,12 +478,16 @@ async function finishMatch() {
     if (!confirm('Tem certeza que deseja finalizar este jogo?')) return;
     
     try {
-        const response = await fetch(`${API_BASE}/matches/${matchId}/finish`, {
+        const response = await apiCall(`${API_BASE}/matches/${matchId}/finish`, {
             method: 'POST',
         });
         
         if (!response.ok) {
-            throw new Error('Erro ao finalizar jogo');
+            let errorMessage = 'Erro ao finalizar jogo';
+            if (response.status === 403) {
+                errorMessage = 'Não tem permissão para finalizar jogos. Verifique se está autenticado como árbitro.';
+            }
+            throw new Error(errorMessage);
         }
         
         // Add finish event

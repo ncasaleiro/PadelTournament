@@ -147,7 +147,7 @@ Create Session And Login As Admin
 
 Create Test Category
     [Documentation]    Create a test category
-    ${headers}=    Create Dictionary    Content-Type=application/json
+    ${headers}=    Create Dictionary    Content-Type=application/json    Authorization=Bearer ${ADMIN_TOKEN}
     ${body}=    Create Dictionary    name=TestCategory
     ${response}=    POST On Session    ${SESSION_NAME}    ${API_BASE}/categories    json=${body}    headers=${headers}
     Set Suite Variable    ${CATEGORY_ID}    ${response.json()['category_id']}
@@ -172,7 +172,8 @@ Cleanup Test Teams
 
 Cleanup Test Category
     [Documentation]    Clean up test category
-    Run Keyword If    '${CATEGORY_ID}' != '${EMPTY}'    DELETE On Session    ${SESSION_NAME}    ${API_BASE}/categories/${CATEGORY_ID}    expected_status=any
+    ${headers}=    Create Dictionary    Authorization=Bearer ${ADMIN_TOKEN}
+    Run Keyword If    '${CATEGORY_ID}' != '${EMPTY}'    DELETE On Session    ${SESSION_NAME}    ${API_BASE}/categories/${CATEGORY_ID}    headers=${headers}    expected_status=any
     Set Suite Variable    ${CATEGORY_ID}    ${EMPTY}
 
 Cleanup Test Data
@@ -196,8 +197,9 @@ Cleanup Test Teams From List
 Cleanup Test Categories From List
     [Documentation]    Clean up test categories from a list
     [Arguments]    ${categories}
+    ${headers}=    Create Dictionary    Authorization=Bearer ${ADMIN_TOKEN}
     FOR    ${category}    IN    @{categories}
         ${name}=    Get From Dictionary    ${category}    name
-        Run Keyword If    'TestCategory' in '${name}' or 'UpdatedCategory' in '${name}'    DELETE On Session    ${SESSION_NAME}    ${API_BASE}/categories/${category['category_id']}    expected_status=any
+        Run Keyword If    'TestCategory' in '${name}' or 'UpdatedCategory' in '${name}'    DELETE On Session    ${SESSION_NAME}    ${API_BASE}/categories/${category['category_id']}    headers=${headers}    expected_status=any
     END
 

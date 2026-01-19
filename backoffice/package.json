@@ -3,6 +3,7 @@
   "version": "1.0.0",
   "description": "Backoffice para gestão de torneios de Padel",
   "main": "src/server.js",
+  "bin": "src/server.js",
   "scripts": {
     "start": "node src/server.js",
     "dev": "nodemon src/server.js",
@@ -11,7 +12,9 @@
     "validate-users": "node src/database/validate-users.js",
     "test": "jest",
     "test:watch": "jest --watch",
-    "test:coverage": "jest --coverage"
+    "test:coverage": "jest --coverage",
+    "build:win": "pkg . --targets node18-win-x64 --output dist/padel-backoffice.exe",
+    "build:rpi64": "pkg . --targets node18-linux-arm64 --output dist/padel-backoffice-linux-arm64"
   },
   "keywords": [
     "padel",
@@ -30,6 +33,12 @@
   "devDependencies": {
     "jest": "^29.7.0",
     "nodemon": "^3.0.2",
+    "pkg": "^5.8.1",
     "supertest": "^6.3.3"
+  },
+  "pkg": {
+    "assets": [
+      "public/**/*"
+    ]
   }
 }

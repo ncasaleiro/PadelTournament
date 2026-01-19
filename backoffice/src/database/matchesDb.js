@@ -2,7 +2,9 @@ const fs = require('fs');
 const path = require('path');
 
 // Ensure data directory exists
-const dataDir = path.join(__dirname, '../../data');
+const isPkg = typeof process.pkg !== 'undefined';
+const baseDir = isPkg ? path.dirname(process.execPath) : path.join(__dirname, '../../');
+const dataDir = path.join(baseDir, 'data');
 if (!fs.existsSync(dataDir)) {
   fs.mkdirSync(dataDir, { recursive: true });
 }
@@ -83,4 +85,14 @@ initMatchesDatabase();
 migrateMatchesFromMainDb();
 
 module.exports = matchesDb;
+
+
+
+
+
+
+
+
+
+
 

@@ -573,7 +573,7 @@ Start Test Match
 
 Create Test Category
     [Documentation]    Create a test category
-    ${headers}=    Create Dictionary    Content-Type=application/json
+    ${headers}=    Create Dictionary    Content-Type=application/json    Authorization=Bearer ${ADMIN_TOKEN}
     ${body}=    Create Dictionary    name=TestCategory
     ${response}=    POST On Session    ${SESSION_NAME}    ${API_BASE}/categories    json=${body}    headers=${headers}
     Set Suite Variable    ${CATEGORY_ID}    ${response.json()['category_id']}

@@ -10,7 +10,41 @@ class MatchStatistics {
    * @returns {Object} Statistics object
    */
   static calculate(match) {
-    const sets = JSON.parse(match.sets_data || '[]');
+    let sets = [];
+    try {
+      sets = JSON.parse(match.sets_data || '[]');
+    } catch (e) {
+      sets = [];
+    }
+    
+    // If sets_data is empty but current_set_data has games, include it
+    let currentSet = {};
+    try {
+      currentSet = JSON.parse(match.current_set_data || '{}');
+    } catch (e) {
+      currentSet = {};
+    }
+    
+    const currentSetIndex = match.current_set_index || 0;
+    
+    // If current set has games, ensure it's included in sets_data
+    if (currentSet.gamesA > 0 || currentSet.gamesB > 0) {
+      // Ensure sets array has enough elements
+      while (sets.length <= currentSetIndex) {
+        sets.push({ gamesA: 0, gamesB: 0, tiebreak: null });
+      }
+      // Update the current set in sets array if it has more games than what's stored
+      const existingSet = sets[currentSetIndex] || { gamesA: 0, gamesB: 0, tiebreak: null };
+      if ((currentSet.gamesA || 0) > (existingSet.gamesA || 0) || 
+          (currentSet.gamesB || 0) > (existingSet.gamesB || 0)) {
+        sets[currentSetIndex] = {
+          gamesA: currentSet.gamesA || 0,
+          gamesB: currentSet.gamesB || 0,
+          tiebreak: currentSet.tiebreak || null
+        };
+      }
+    }
+    
     const scoreHistory = JSON.parse(match.score_history || '[]');
     
     const stats = {
@@ -84,6 +118,16 @@ class MatchStatistics {
       });
     });
 
+    // Track points per set for validation (only normal game points, not tiebreak)
+    const pointsPerSetTeam1 = {};
+    const pointsPerSetTeam2 = {};
+    
+    // Initialize points counters for all sets
+    sets.forEach((set, index) => {
+      pointsPerSetTeam1[index] = 0;
+      pointsPerSetTeam2[index] = 0;
+    });
+    
     // Calculate point flow from score history
     if (scoreHistory.length > 0) {
       let previousState = null;
@@ -91,6 +135,7 @@ class MatchStatistics {
         const currentSet = JSON.parse(state.current_set_data || '{}');
         const currentGame = JSON.parse(state.current_game_data || '{}');
         const sets = JSON.parse(state.sets_data || '[]');
+        const setIndex = state.current_set_index || 0;
         
         // Determine which team scored based on state changes
         if (previousState) {
@@ -116,18 +161,27 @@ class MatchStatistics {
             
             if (team === 'team1') {
               stats.totalPointsTeam1++;
+              // Only count normal game points (not tiebreak) for minimum validation
+              if (!isTiebreak && pointsPerSetTeam1[setIndex] !== undefined) {
+                pointsPerSetTeam1[setIndex]++;
+              }
             } else {
               stats.totalPointsTeam2++;
+              // Only count normal game points (not tiebreak) for minimum validation
+              if (!isTiebreak && pointsPerSetTeam2[setIndex] !== undefined) {
+                pointsPerSetTeam2[setIndex]++;
+              }
             }
           } else {
             // Fallback: determine team from state changes
             // Check if point was scored in normal game
             if (currentGame.pointsA > prevGame.pointsA) {
+              const isTiebreak = currentSet.tiebreak !== null;
               stats.pointFlow.push({
                 timestamp: state.timestamp,
                 team: 'team1',
                 set: state.current_set_index + 1,
-                action: 'point',
+                action: isTiebreak ? 'tiebreak_point' : 'point',
                 score: {
                   sets: sets.length,
                   currentSet: currentSet,
@@ -135,12 +189,16 @@ class MatchStatistics {
                 }
               });
               stats.totalPointsTeam1++;
+              if (!isTiebreak && pointsPerSetTeam1[setIndex] !== undefined) {
+                pointsPerSetTeam1[setIndex]++;
+              }
             } else if (currentGame.pointsB > prevGame.pointsB) {
+              const isTiebreak = currentSet.tiebreak !== null;
               stats.pointFlow.push({
                 timestamp: state.timestamp,
                 team: 'team2',
                 set: state.current_set_index + 1,
-                action: 'point',
+                action: isTiebreak ? 'tiebreak_point' : 'point',
                 score: {
                   sets: sets.length,
                   currentSet: currentSet,
@@ -148,6 +206,9 @@ class MatchStatistics {
                 }
               });
               stats.totalPointsTeam2++;
+              if (!isTiebreak && pointsPerSetTeam2[setIndex] !== undefined) {
+                pointsPerSetTeam2[setIndex]++;
+              }
             }
             
             // Check if point was scored in tiebreak
@@ -229,6 +290,36 @@ class MatchStatistics {
         };
       }
     }
+
+    // Ensure minimum 4 points per game won
+    // If a team won a game but has less than 4 points, add missing points
+    // This handles cases where a game was won without all points being recorded in score_history
+    sets.forEach((set, setIndex) => {
+      const gamesTeam1 = set.gamesA || 0;
+      const gamesTeam2 = set.gamesB || 0;
+      
+      // Get points counted for this set from the tracking above
+      const pointsInSetTeam1 = pointsPerSetTeam1[setIndex] || 0;
+      const pointsInSetTeam2 = pointsPerSetTeam2[setIndex] || 0;
+      
+      // Ensure minimum 4 points per game won
+      // If team1 won games but has less than 4 points per game, add missing points
+      if (gamesTeam1 > 0) {
+        const minPointsRequired = gamesTeam1 * 4;
+        if (pointsInSetTeam1 < minPointsRequired) {
+          const missingPoints = minPointsRequired - pointsInSetTeam1;
+          stats.totalPointsTeam1 += missingPoints;
+        }
+      }
+      
+      if (gamesTeam2 > 0) {
+        const minPointsRequired = gamesTeam2 * 4;
+        if (pointsInSetTeam2 < minPointsRequired) {
+          const missingPoints = minPointsRequired - pointsInSetTeam2;
+          stats.totalPointsTeam2 += missingPoints;
+        }
+      }
+    });
 
     // Calculate averages
     const totalGames = stats.totalGamesTeam1 + stats.totalGamesTeam2;

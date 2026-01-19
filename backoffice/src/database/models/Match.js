@@ -49,6 +49,13 @@ class Match {
       .map(match => enrichMatch(match));
   }
 
+  static getByTournament(tournamentId) {
+    const matches = matchesDb.load();
+    return matches
+      .filter(m => m.tournament_id === parseInt(tournamentId))
+      .map(match => enrichMatch(match));
+  }
+
   static getByStatus(status) {
     const matches = matchesDb.load();
     return matches
@@ -64,10 +71,13 @@ class Match {
     
     const match = {
       match_id: newId,
-      team1_id: parseInt(matchData.team1_id),
-      team2_id: parseInt(matchData.team2_id),
+      tournament_id: matchData.tournament_id || null,
+      tournament_name: matchData.tournament_name || 'N/A',
+      team1_id: matchData.team1_id !== null && matchData.team1_id !== undefined ? parseInt(matchData.team1_id) : null,
+      team2_id: matchData.team2_id !== null && matchData.team2_id !== undefined ? parseInt(matchData.team2_id) : null,
       category_id: parseInt(matchData.category_id),
       phase: matchData.phase || 'Group',
+      group_name: matchData.group_name || null,
       scheduled_date: matchData.scheduled_date || null,
       scheduled_time: matchData.scheduled_time || null,
       court: matchData.court || null,
@@ -81,6 +91,8 @@ class Match {
       events_data: matchData.events_data || JSON.stringify([]),
       score_history: JSON.stringify([]),
       use_super_tiebreak: matchData.use_super_tiebreak || false,
+      placeholder: matchData.placeholder || false,
+      placeholder_label: matchData.placeholder_label || null,
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString()
     };
@@ -99,7 +111,7 @@ class Match {
     
     // Update allowed fields
     const allowedFields = [
-      'team1_id', 'team2_id', 'category_id', 'phase',
+      'tournament_id', 'tournament_name', 'team1_id', 'team2_id', 'category_id', 'phase', 'group_name',
       'scheduled_date', 'scheduled_time', 'court', 'status',
       'sets_data', 'current_set_index', 'current_set_data', 'current_game_data',
       'winner_team_id', 'referee_notes', 'events_data', 'score_history',
